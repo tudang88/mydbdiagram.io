@@ -5,13 +5,13 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 ## Phase 1: Project Setup & Infrastructure
 
 ### 1.1 Initial Setup
-- [ ] Initialize npm project with package.json
-- [ ] Install and configure TypeScript
-- [ ] Install and configure ESLint
-- [ ] Install and configure Prettier
-- [ ] Set up project directory structure (src/client, src/server)
-- [ ] Create basic README.md
-- [ ] Commit: "chore: initial project setup"
+- [x] Initialize npm project with package.json
+- [x] Install and configure TypeScript
+- [x] Install and configure ESLint
+- [x] Install and configure Prettier
+- [x] Set up project directory structure (src/client, src/server)
+- [x] Create basic README.md
+- [x] Commit: "chore: initial project setup"
 
 ### 1.2 Backend Infrastructure
 - [ ] Install Express and dependencies
