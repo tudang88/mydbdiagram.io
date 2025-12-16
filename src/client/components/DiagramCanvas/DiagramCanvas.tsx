@@ -4,6 +4,7 @@ import { UIStore } from '../../state/store/uiStore';
 import { Diagram } from '../../core/diagram/Diagram';
 import { TableNode } from '../TableNode/TableNode';
 import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
+import { ContextMenu, ContextMenuItem } from '../ContextMenu/ContextMenu';
 import './DiagramCanvas.css';
 
 interface DiagramCanvasProps {
@@ -11,6 +12,9 @@ interface DiagramCanvasProps {
   uiStore: UIStore;
   onTableDoubleClick?: (tableId: string) => void;
   onColumnDoubleClick?: (tableId: string, columnId: string) => void;
+  onRelationshipCreate?: (fromTableId: string, toTableId?: string) => void;
+  onTableDelete?: (tableId: string) => void;
+  onTableAdd?: () => void;
 }
 
 // Note: onColumnDoubleClick is reserved for future column editing feature
@@ -20,6 +24,9 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   uiStore,
   onTableDoubleClick,
   onColumnDoubleClick: _onColumnDoubleClick, // Reserved for future column editing
+  onRelationshipCreate,
+  onTableDelete,
+  onTableAdd,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [diagram, setDiagram] = useState<Diagram | null>(null);
@@ -27,6 +34,15 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedTableId, setDraggedTableId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+    items: ContextMenuItem[];
+  }>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    items: [],
+  });
 
   // Subscribe to diagram changes
   useEffect(() => {
@@ -58,6 +74,21 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   // Handle pan start (only if not clicking on a table)
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // Right click for context menu
+      if (e.button === 2) {
+        e.preventDefault();
+        const tableNode = (e.target as HTMLElement).closest('.table-node');
+        if (tableNode) {
+          const tableId = tableNode.getAttribute('data-table-id');
+          if (tableId) {
+            showTableContextMenu(e.clientX, e.clientY, tableId);
+          }
+        } else {
+          showCanvasContextMenu(e.clientX, e.clientY);
+        }
+        return;
+      }
+
       if (e.button === 0 && (e.target as HTMLElement).closest('.table-node') === null) {
         // Left mouse button and not clicking on table
         setIsDragging(true);
@@ -138,6 +169,89 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     setDraggedTableId(null);
   }, []);
 
+  // Show table context menu
+  const showTableContextMenu = useCallback(
+    (x: number, y: number, tableId: string) => {
+      const items: ContextMenuItem[] = [
+        {
+          label: 'Edit Table',
+          action: () => onTableDoubleClick?.(tableId),
+        },
+        {
+          label: 'Create Relationship',
+          action: () => onRelationshipCreate?.(tableId),
+        },
+        { divider: true },
+        {
+          label: 'Delete Table',
+          action: () => {
+            if (confirm('Are you sure you want to delete this table?')) {
+              onTableDelete?.(tableId);
+            }
+          },
+        },
+      ];
+      setContextMenu({ isOpen: true, position: { x, y }, items });
+    },
+    [onTableDoubleClick, onRelationshipCreate, onTableDelete]
+  );
+
+  // Show canvas context menu
+  const showCanvasContextMenu = useCallback(
+    (x: number, y: number) => {
+      const items: ContextMenuItem[] = [
+        {
+          label: 'Add Table',
+          action: () => onTableAdd?.(),
+        },
+      ];
+      setContextMenu({ isOpen: true, position: { x, y }, items });
+    },
+    [onTableAdd]
+  );
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent shortcuts when typing in inputs
+      if (
+        (e.target as HTMLElement).tagName === 'INPUT' ||
+        (e.target as HTMLElement).tagName === 'TEXTAREA'
+      ) {
+        return;
+      }
+
+      // Delete selected table
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (uiState.selectedTableId && onTableDelete) {
+          if (confirm('Are you sure you want to delete this table?')) {
+            onTableDelete(uiState.selectedTableId);
+          }
+        }
+      }
+
+      // Escape to close context menu
+      if (e.key === 'Escape') {
+        setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, items: [] });
+      }
+
+      // Ctrl/Cmd + N for new table
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        onTableAdd?.();
+      }
+
+      // Ctrl/Cmd + S for save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        // Save will be handled by parent component
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uiState.selectedTableId, onTableDelete, onTableAdd]);
+
   // Render grid
   const renderGrid = () => {
     if (!uiState.showGrid) return null;
@@ -196,6 +310,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {renderGrid()}
       <div
@@ -244,6 +359,13 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           </div>
         )}
       </div>
+
+      <ContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        items={contextMenu.items}
+        onClose={() => setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, items: [] })}
+      />
     </div>
   );
 };

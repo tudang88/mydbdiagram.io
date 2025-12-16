@@ -5,6 +5,7 @@ import { Toolbar } from './components/Toolbar/Toolbar';
 import { DiagramCanvas } from './components/DiagramCanvas/DiagramCanvas';
 import { TableEditor } from './components/TableEditor/TableEditor';
 import { ColumnEditor } from './components/ColumnEditor/ColumnEditor';
+import { RelationshipCreator } from './components/RelationshipCreator/RelationshipCreator';
 import { DiagramStore } from './state/store/diagramStore';
 import { UIStore } from './state/store/uiStore';
 import { DiagramService } from './services/DiagramService';
@@ -13,6 +14,7 @@ import { ApiClient } from './services/ApiClient';
 import { DiagramValidator } from './core/validator/DiagramValidator';
 import { Diagram } from './core/diagram/Diagram';
 import { Table } from './core/table/Table';
+import { Relationship } from './core/relationship/Relationship';
 import { Column } from './types/table.types';
 import './App.css';
 
@@ -29,6 +31,9 @@ function App() {
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [showRelationshipCreator, setShowRelationshipCreator] = useState(false);
+  const [relationshipFromTable, setRelationshipFromTable] = useState<string | undefined>();
+  const [relationshipToTable, setRelationshipToTable] = useState<string | undefined>();
 
   const handleNewDiagram = useCallback(() => {
     const newDiagram = Diagram.create(`diagram-${Date.now()}`);
@@ -118,6 +123,70 @@ function App() {
     setError(null);
   }, []);
 
+  const handleRelationshipCreate = useCallback((fromTableId: string, toTableId?: string) => {
+    setRelationshipFromTable(fromTableId);
+    setRelationshipToTable(toTableId);
+    setShowRelationshipCreator(true);
+  }, []);
+
+  const handleRelationshipSave = useCallback(
+    (relationship: Relationship) => {
+      const diagram = diagramStore.getDiagram();
+      if (!diagram) return;
+
+      try {
+        diagram.addRelationship(relationship);
+        setShowRelationshipCreator(false);
+        setRelationshipFromTable(undefined);
+        setRelationshipToTable(undefined);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to create relationship');
+      }
+    },
+    [diagramStore]
+  );
+
+  const handleTableDelete = useCallback(
+    (tableId: string) => {
+      const diagram = diagramStore.getDiagram();
+      if (!diagram) return;
+
+      try {
+        diagram.removeTable(tableId);
+        uiStore.setState({ selectedTableId: null });
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete table');
+      }
+    },
+    [diagramStore, uiStore]
+  );
+
+  const handleTableAdd = useCallback(() => {
+    const diagram = diagramStore.getDiagram();
+    if (!diagram) {
+      const newDiagram = Diagram.create(`diagram-${Date.now()}`);
+      diagramStore.setDiagram(newDiagram);
+    }
+
+    const currentDiagram = diagramStore.getDiagram();
+    if (!currentDiagram) return;
+
+    try {
+      const table = new Table(
+        `table-${Date.now()}`,
+        'NewTable',
+        { x: 200, y: 200 }
+      );
+      currentDiagram.addTable(table);
+      uiStore.setState({ selectedTableId: table.getId() });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add table');
+    }
+  }, [diagramStore, uiStore]);
+
   return (
     <ErrorBoundary>
       <div className="app">
@@ -134,6 +203,9 @@ function App() {
             uiStore={uiStore}
             onTableDoubleClick={handleTableDoubleClick}
             onColumnDoubleClick={handleColumnDoubleClick}
+            onRelationshipCreate={handleRelationshipCreate}
+            onTableDelete={handleTableDelete}
+            onTableAdd={handleTableAdd}
           />
         </div>
         {error && <ErrorMessage message={error} onDismiss={handleDismissError} />}
@@ -149,6 +221,20 @@ function App() {
             column={editingColumn}
             onSave={handleColumnSave}
             onCancel={handleColumnCancel}
+          />
+        )}
+        {showRelationshipCreator && (
+          <RelationshipCreator
+            isOpen={showRelationshipCreator}
+            onClose={() => {
+              setShowRelationshipCreator(false);
+              setRelationshipFromTable(undefined);
+              setRelationshipToTable(undefined);
+            }}
+            onSave={handleRelationshipSave}
+            diagram={diagramStore.getDiagram()}
+            fromTableId={relationshipFromTable}
+            toTableId={relationshipToTable}
           />
         )}
       </div>

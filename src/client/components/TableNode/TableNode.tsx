@@ -46,6 +46,7 @@ export const TableNode: React.FC<TableNodeProps> = ({
   return (
     <div
       className={`table-node ${isSelected ? 'selected' : ''}`}
+      data-table-id={table.getId()}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
