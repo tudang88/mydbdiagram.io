@@ -350,7 +350,8 @@ async function testFileImportSimulation(): Promise<void> {
 
   // Test unsupported file
   const txtFile = await simulateFileRead('diagram.txt', 'some text');
-  const isSupported = txtFile.extension === 'sql' || txtFile.extension === 'json';
+  const supportedFormats = ['sql', 'json'];
+  const isSupported = txtFile.extension && supportedFormats.includes(txtFile.extension);
   if (isSupported) {
     throw new Error('Unsupported file detection failed');
   }
