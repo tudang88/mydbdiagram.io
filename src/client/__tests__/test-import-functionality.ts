@@ -263,8 +263,9 @@ async function testImportErrorHandling(): Promise<void> {
   console.log('✅ Validation error handling working');
 
   // Test unsupported format
-  const unsupportedExtension = 'txt';
-  if (unsupportedExtension === 'sql' || unsupportedExtension === 'json') {
+  const unsupportedExtension: string = 'txt';
+  const supportedFormats = ['sql', 'json'];
+  if (supportedFormats.includes(unsupportedExtension)) {
     throw new Error('Unsupported format detection failed');
   }
   console.log('✅ Unsupported format handling working');
