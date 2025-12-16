@@ -32,7 +32,7 @@ const uiStore = new UIStore();
 function App() {
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: NotificationType; message: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false); // Reserved for future loading states
   const [loadingMessage] = useState<string | undefined>();
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
