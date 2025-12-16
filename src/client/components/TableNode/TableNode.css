@@ -1,0 +1,74 @@
+.table-node {
+  position: absolute;
+  min-width: 200px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
+  transition: box-shadow 0.2s;
+}
+
+.table-node:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.table-node.selected {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.table-header {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ddd;
+  border-radius: 4px 4px 0 0;
+}
+
+.table-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.table-body {
+  padding: 0;
+}
+
+.table-columns {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-column {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.table-column:last-child {
+  border-bottom: none;
+}
+
+.column-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.column-type {
+  flex: 1;
+  color: #666;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.column-constraints {
+  margin-left: 8px;
+  font-size: 12px;
+}
+
