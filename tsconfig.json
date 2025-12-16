@@ -7,6 +7,7 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": false,
+    "jsx": "react-jsx",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -23,7 +24,7 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/client/*"]
     }
   },
   "include": ["src/**/*"],

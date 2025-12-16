@@ -23,12 +23,12 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: backend infrastructure setup"
 
 ### 1.3 Frontend Infrastructure
-- [ ] Choose and set up frontend framework (React/Vue/Vanilla)
-- [ ] Install build tool (Vite/Webpack)
-- [ ] Set up development server
-- [ ] Configure path aliases (@/*)
-- [ ] Create basic app structure
-- [ ] Commit: "feat: frontend infrastructure setup"
+- [x] Choose and set up frontend framework (React/Vue/Vanilla)
+- [x] Install build tool (Vite/Webpack)
+- [x] Set up development server
+- [x] Configure path aliases (@/*)
+- [x] Create basic app structure
+- [x] Commit: "feat: frontend infrastructure setup"
 
 ## Phase 2: Core Domain Models
 
