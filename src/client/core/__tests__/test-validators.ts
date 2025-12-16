@@ -9,7 +9,6 @@ import { RelationshipValidator } from '../validator/RelationshipValidator';
 import { Diagram } from '../diagram/Diagram';
 import { Table } from '../table/Table';
 import { Relationship } from '../relationship/Relationship';
-import { Column } from '../../types/table.types';
 
 async function testDiagramValidator(): Promise<void> {
   console.log('\n🧪 Testing DiagramValidator...');
