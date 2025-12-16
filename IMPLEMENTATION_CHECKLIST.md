@@ -211,11 +211,11 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement import functionality"
 
 ### 5.2 Export Functionality
-- [ ] Connect export UI to services
-- [ ] Add export format selection
-- [ ] Add download functionality
-- [ ] Add export progress indicator
-- [ ] Commit: "feat: implement export functionality"
+- [x] Connect export UI to services
+- [x] Add export format selection
+- [x] Add download functionality
+- [x] Add export progress indicator
+- [x] Commit: "feat: implement export functionality"
 
 ### 5.3 Save/Load Functionality
 - [ ] Connect save to backend API
