@@ -1,0 +1,228 @@
+.import-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.import-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: #f0f0f0;
+}
+
+.dialog-content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.import-mode-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.mode-button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-button:hover {
+  background: #f8f9fa;
+  border-color: #bbb;
+}
+
+.mode-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.file-button {
+  margin-left: auto;
+}
+
+.import-input-area {
+  margin-bottom: 16px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.input-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.input-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.input-group textarea.error {
+  border-color: #dc3545;
+}
+
+.paste-mode-info {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.paste-mode-info p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.error-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.error-message pre {
+  margin: 0;
+  font-size: 12px;
+  color: #856404;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  flex: 1;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.cancel-button,
+.validate-button,
+.import-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.validate-button {
+  background: #ffc107;
+  color: #333;
+}
+
+.validate-button:hover:not(:disabled) {
+  background: #e0a800;
+}
+
+.import-button {
+  background: #007bff;
+  color: white;
+}
+
+.import-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.cancel-button:disabled,
+.validate-button:disabled,
+.import-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

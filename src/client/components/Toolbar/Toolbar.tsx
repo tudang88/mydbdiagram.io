@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { DiagramService } from '../../services/DiagramService';
 import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
 import { Diagram } from '../../core/diagram/Diagram';
-import { JSONParser } from '../../core/parser/JSONParser';
-import { SQLParser } from '../../core/parser/SQLParser';
+import { ImportDialog } from '../ImportDialog/ImportDialog';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -23,8 +22,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onDiagramLoaded,
 }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [showImportMenu, setShowImportMenu] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   const handleNew = () => {
     const newDiagram = Diagram.create(`diagram-${Date.now()}`);
@@ -106,57 +104,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     setShowExportMenu(false);
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const text = await file.text();
-
-    try {
-      let diagram: Diagram | null = null;
-
-      if (fileExtension === 'json') {
-        const parser = new JSONParser();
-        const result = parser.parse(text);
-        if (result.success && result.data) {
-          diagram = result.data;
-        } else {
-          alert(`Failed to parse JSON: ${result.errors?.map((e) => e.message).join(', ')}`);
-          return;
-        }
-      } else if (fileExtension === 'sql') {
-        const parser = new SQLParser();
-        const result = parser.parse(text);
-        if (result.success && result.data) {
-          diagram = result.data;
-        } else {
-          alert(`Failed to parse SQL: ${result.errors?.map((e) => e.message).join(', ')}`);
-          return;
-        }
-      } else {
-        alert('Unsupported file format. Please use .json or .sql files.');
-        return;
-      }
-
-      if (diagram) {
-        diagramStore.setDiagram(diagram);
-        onDiagramLoaded();
-        alert('Diagram imported successfully!');
-      }
-    } catch (error) {
-      alert(`Error importing diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    setShowImportMenu(false);
+  const handleImport = (diagram: Diagram) => {
+    diagramStore.setDiagram(diagram);
+    onDiagramLoaded();
   };
 
   const supportedFormats = ['json', 'sql', 'svg'];
@@ -180,7 +130,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <button
             className="toolbar-button"
             onClick={() => {
-              setShowImportMenu(false);
               setShowExportMenu(!showExportMenu);
             }}
             title="Export Diagram"
@@ -202,37 +151,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           )}
         </div>
 
-        <div className="toolbar-menu">
-          <button
-            className="toolbar-button"
-            onClick={() => {
-              setShowExportMenu(false);
-              setShowImportMenu(!showImportMenu);
-            }}
-            title="Import Diagram"
-          >
-            Import ▼
-          </button>
-          {showImportMenu && (
-            <div className="toolbar-dropdown">
-              <button className="dropdown-item" onClick={handleImportClick}>
-                Import from JSON
-              </button>
-              <button className="dropdown-item" onClick={handleImportClick}>
-                Import from SQL
-              </button>
-            </div>
-          )}
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.sql"
-          onChange={handleFileImport}
-          style={{ display: 'none' }}
-        />
+        <button
+          className="toolbar-button"
+          onClick={() => {
+            setShowExportMenu(false);
+            setShowImportDialog(true);
+          }}
+          title="Import Diagram"
+        >
+          Import
+        </button>
       </div>
+
+      <ImportDialog
+        isOpen={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 };
