@@ -236,30 +236,30 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 ## Phase 6: Testing
 
 ### 6.1 Unit Tests - Core
-- [ ] Write tests for Diagram class
-- [ ] Write tests for Table class
-- [ ] Write tests for Relationship class
-- [ ] Write tests for Validators
-- [ ] Commit: "test: add core domain model tests"
+- [x] Write tests for Diagram class
+- [x] Write tests for Table class
+- [x] Write tests for Relationship class
+- [x] Write tests for Validators
+- [x] Commit: "test: add core domain model tests"
 
 ### 6.2 Unit Tests - Backend
-- [ ] Write tests for DiagramService
-- [ ] Write tests for DiagramRepository
-- [ ] Write tests for ExportService
-- [ ] Write tests for Controllers
-- [ ] Commit: "test: add backend service tests"
+- [x] Write tests for DiagramService
+- [x] Write tests for DiagramRepository
+- [x] Write tests for ExportService
+- [x] Write tests for Controllers
+- [x] Commit: "test: add backend service tests"
 
 ### 6.3 Unit Tests - Frontend
-- [ ] Write tests for Services
-- [ ] Write tests for Stores
-- [ ] Write tests for Parsers
-- [ ] Commit: "test: add frontend service tests"
+- [x] Write tests for Services
+- [x] Write tests for Stores
+- [x] Write tests for Parsers
+- [x] Commit: "test: add frontend service tests"
 
 ### 6.4 Integration Tests
-- [ ] Write API integration tests
-- [ ] Write end-to-end flow tests
-- [ ] Test import/export flows
-- [ ] Commit: "test: add integration tests"
+- [x] Write API integration tests
+- [x] Write end-to-end flow tests
+- [x] Test import/export flows
+- [x] Commit: "test: add integration tests"
 
 ## Phase 7: Polish & Documentation
 
