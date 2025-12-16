@@ -66,17 +66,18 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   }, [uiStore]);
 
   // Throttled wheel zoom handler for better performance
-  const handleWheelThrottled = useMemo(
-    () =>
-      throttle((e: React.WheelEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        const currentZoom = uiStore.getState().zoomLevel;
-        const newZoom = Math.max(0.5, Math.min(3, currentZoom + delta));
-        uiStore.setState({ zoomLevel: newZoom });
-      }, 16) as (e: React.WheelEvent<HTMLDivElement>) => void, // ~60fps
-    [uiStore]
-  );
+  const handleWheelThrottled = useMemo(() => {
+    const wheelHandler = (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const currentZoom = uiStore.getState().zoomLevel;
+      const newZoom = Math.max(0.5, Math.min(3, currentZoom + delta));
+      uiStore.setState({ zoomLevel: newZoom });
+    };
+    return throttle(wheelHandler as (...args: unknown[]) => void, 16) as (
+      e: React.WheelEvent<HTMLDivElement>
+    ) => void; // ~60fps
+  }, [uiStore]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
