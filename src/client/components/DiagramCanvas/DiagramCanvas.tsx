@@ -116,20 +116,21 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   );
 
   // Throttled pan move handler for better performance
-  const handleMouseMoveThrottled = useMemo(
-    () =>
-      throttle((e: React.MouseEvent<HTMLDivElement>) => {
-        if (isDragging && !draggedTableId) {
-          uiStore.setState({
-            panOffset: {
-              x: e.clientX - dragStart.x,
-              y: e.clientY - dragStart.y,
-            },
-          });
-        }
-      }, 16) as (e: React.MouseEvent<HTMLDivElement>) => void, // ~60fps
-    [isDragging, dragStart, draggedTableId, uiStore]
-  );
+  const handleMouseMoveThrottled = useMemo(() => {
+    const panHandler = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isDragging && !draggedTableId) {
+        uiStore.setState({
+          panOffset: {
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y,
+          },
+        });
+      }
+    };
+    return throttle(panHandler as (...args: unknown[]) => void, 16) as (
+      e: React.MouseEvent<HTMLDivElement>
+    ) => void; // ~60fps
+  }, [isDragging, dragStart, draggedTableId, uiStore]);
 
   // Handle pan move
   const handleMouseMove = useCallback(
