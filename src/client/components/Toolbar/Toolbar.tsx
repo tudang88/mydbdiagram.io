@@ -4,6 +4,7 @@ import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
 import { Diagram } from '../../core/diagram/Diagram';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
+import { ExportDialog } from '../ExportDialog/ExportDialog';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -21,7 +22,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onNewDiagram,
   onDiagramLoaded,
 }) => {
-  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
 
   const handleNew = () => {
@@ -68,48 +69,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
-  const handleExport = async (format: string) => {
-    const diagram = diagramStore.getDiagram();
-    if (!diagram) {
-      alert('No diagram to export');
-      return;
-    }
-
-    const diagramId = diagram.getId();
-    if (!diagramId) {
-      alert('Diagram must be saved before exporting');
-      return;
-    }
-
-    try {
-      const result = await exportService.exportDiagram(diagramId, format);
-      if (result.success) {
-        if (result.downloadUrl) {
-          // Create download link
-          const link = document.createElement('a');
-          link.href = result.downloadUrl;
-          link.download = `diagram.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        alert(`Diagram exported as ${format.toUpperCase()} successfully!`);
-      } else {
-        alert(`Failed to export diagram: ${result.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      alert(`Error exporting diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-
-    setShowExportMenu(false);
-  };
 
   const handleImport = (diagram: Diagram) => {
     diagramStore.setDiagram(diagram);
     onDiagramLoaded();
   };
 
-  const supportedFormats = ['json', 'sql', 'svg'];
 
   return (
     <div className="toolbar">
@@ -126,35 +91,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       <div className="toolbar-right">
-        <div className="toolbar-menu">
-          <button
-            className="toolbar-button"
-            onClick={() => {
-              setShowExportMenu(!showExportMenu);
-            }}
-            title="Export Diagram"
-          >
-            Export ▼
-          </button>
-          {showExportMenu && (
-            <div className="toolbar-dropdown">
-              {supportedFormats.map((format) => (
-                <button
-                  key={format}
-                  className="dropdown-item"
-                  onClick={() => handleExport(format)}
-                >
-                  Export as {format.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         <button
           className="toolbar-button"
           onClick={() => {
-            setShowExportMenu(false);
+            setShowImportDialog(false);
+            setShowExportDialog(true);
+          }}
+          title="Export Diagram"
+        >
+          Export
+        </button>
+        <button
+          className="toolbar-button"
+          onClick={() => {
+            setShowExportDialog(false);
             setShowImportDialog(true);
           }}
           title="Import Diagram"
@@ -167,6 +117,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onImport={handleImport}
+      />
+      <ExportDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        exportService={exportService}
+        diagramStore={diagramStore}
       />
     </div>
   );
