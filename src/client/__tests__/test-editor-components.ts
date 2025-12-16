@@ -134,13 +134,15 @@ async function testColumnEditorLogic(): Promise<void> {
   };
 
   toggleConstraint('PRIMARY_KEY');
-  if (constraints.length !== 1 || constraints[0].type !== 'PRIMARY_KEY') {
+  const lengthAfterAdd = constraints.length;
+  if (lengthAfterAdd !== 1 || constraints[0].type !== 'PRIMARY_KEY') {
     throw new Error('Constraint toggle (add) failed');
   }
   console.log('✅ Constraint toggle (add) working');
 
   toggleConstraint('PRIMARY_KEY');
-  if (constraints.length !== 0) {
+  const lengthAfterRemove = constraints.length;
+  if (lengthAfterRemove !== 0) {
     throw new Error('Constraint toggle (remove) failed');
   }
   console.log('✅ Constraint toggle (remove) working');
