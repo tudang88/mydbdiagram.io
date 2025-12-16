@@ -96,11 +96,11 @@ async function testDiagramController(): Promise<void> {
   const createdDiagram = createRes.data as { id: string };
   console.log('✅ Create diagram working');
 
-  // Test findById
+  // Test getById
   const findReq = new MockRequest();
   findReq.params = { id: createdDiagram.id };
   const findRes = new MockResponse();
-  await controller.findById(findReq as any, findRes as any);
+  await controller.getById(findReq as any, findRes as any);
   if (findRes.statusCode !== 200) {
     throw new Error('FindById should return 200');
   }
@@ -109,10 +109,10 @@ async function testDiagramController(): Promise<void> {
   }
   console.log('✅ FindById working');
 
-  // Test findAll
+  // Test list
   const findAllReq = new MockRequest();
   const findAllRes = new MockResponse();
-  await controller.findAll(findAllReq as any, findAllRes as any);
+  await controller.list(findAllReq as any, findAllRes as any);
   if (findAllRes.statusCode !== 200) {
     throw new Error('FindAll should return 200');
   }
@@ -167,7 +167,7 @@ async function testDiagramController(): Promise<void> {
   const notFoundReq = new MockRequest();
   notFoundReq.params = { id: 'non-existent' };
   const notFoundRes = new MockResponse();
-  await controller.findById(notFoundReq as any, notFoundRes as any);
+  await controller.getById(notFoundReq as any, notFoundRes as any);
   if (notFoundRes.statusCode !== 404) {
     throw new Error('FindById with non-existent ID should return 404');
   }
@@ -205,8 +205,7 @@ async function testExportController(): Promise<void> {
   const exportService = new ExportService(diagramService, exporterFactory);
   const controller = new ExportController(exportService);
 
-  // Create a test diagram (for structure testing)
-  const _diagramData = {
+  // Note: ExportController tests verify structure, actual export requires diagram in repository
     id: 'test-diagram',
     tables: [
       {
