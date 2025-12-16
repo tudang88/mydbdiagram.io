@@ -246,7 +246,7 @@ async function testExportImportFlow(): Promise<void> {
 
   const apiClient = new ApiClient();
   const exportService = new ExportService(apiClient);
-  const _diagramStore = new DiagramStore(); // Used in handleExport function
+  const diagramStore = new DiagramStore();
 
   // Test export flow
   const diagram = Diagram.create('export-test');
