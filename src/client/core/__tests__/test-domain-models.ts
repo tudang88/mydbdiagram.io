@@ -7,7 +7,6 @@ import { Diagram } from '../diagram/Diagram';
 import { Table } from '../table/Table';
 import { Relationship } from '../relationship/Relationship';
 import { DiagramValidator } from '../validator/DiagramValidator';
-import { TableValidator } from '../validator/TableValidator';
 import { RelationshipValidator } from '../validator/RelationshipValidator';
 
 console.log('🧪 Testing Domain Models...\n');
