@@ -218,12 +218,12 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement export functionality"
 
 ### 5.3 Save/Load Functionality
-- [ ] Connect save to backend API
-- [ ] Add diagram list view
-- [ ] Add load from list
-- [ ] Add delete functionality
+- [x] Connect save to backend API
+- [x] Add diagram list view
+- [x] Add load from list
+- [x] Add delete functionality
 - [ ] Add auto-save (optional)
-- [ ] Commit: "feat: implement save/load functionality"
+- [x] Commit: "feat: implement save/load functionality"
 
 ### 5.4 Canvas Interactions
 - [ ] Add table selection
