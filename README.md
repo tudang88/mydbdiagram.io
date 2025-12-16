@@ -39,7 +39,10 @@ npm install
 ### Development
 
 ```bash
-# Recommended: Use run.sh script (automatically handles port conflicts)
+# Recommended: Use run-chrome.sh to automatically open in Chrome
+./run-chrome.sh
+
+# Or use run.sh script (automatically handles port conflicts)
 ./run.sh
 
 # Or run directly with npm:
@@ -50,10 +53,20 @@ npm run dev:server  # Backend on http://localhost:3000
 npm run dev:client  # Frontend on http://localhost:5173
 ```
 
-**Note**: The `run.sh` script automatically:
-- Kills any processes using ports 3000, 5173, 5174, or 5175
-- Installs dependencies if needed
-- Starts the application with proper error handling
+**Scripts**:
+- **`run-chrome.sh`**: Automatically opens the app in Chrome after starting
+  - Kills processes using ports 3000, 5173, 5174, or 5175
+  - Waits for server to be ready
+  - Opens Chrome automatically
+- **`run.sh`**: Starts the app with port cleanup
+  - Kills any processes using ports 3000, 5173, 5174, or 5175
+  - Installs dependencies if needed
+  - Starts the application with proper error handling
+
+**Manual Browser Access**:
+After starting the app, open your browser and navigate to:
+- Frontend: `http://localhost:5173` (or the port shown in terminal)
+- Backend API: `http://localhost:3000`
 
 The application will be available at `http://localhost:5173` (frontend) with the backend API at `http://localhost:3000`.
 
