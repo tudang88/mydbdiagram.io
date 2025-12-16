@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { DiagramService } from '../services/DiagramService';
 import { ValidationService } from '../services/ValidationService';
-import { DiagramData } from '../../client/types/diagram.types';
 
 /**
  * Controller for Diagram endpoints

@@ -1,4 +1,6 @@
-import { DiagramData, TableData, RelationshipData } from '../../client/types/diagram.types';
+import { DiagramData } from '../../client/types/diagram.types';
+import { TableData } from '../../client/types/table.types';
+import { RelationshipData } from '../../client/types/relationship.types';
 import { ValidationResult, ValidationError } from '../../client/types/common.types';
 
 /**
