@@ -23,11 +23,6 @@ export const RelationshipLine: React.FC<RelationshipLineProps> = ({
   const toX = toPos.x + 100;
   const toY = toPos.y + 50;
 
-  // Calculate line direction for arrow
-  const dx = toX - fromX;
-  const dy = toY - fromY;
-  const _angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
   // Determine relationship type styling
   const getLineStyle = () => {
     if (relationship.getType() === 'ONE_TO_ONE') {

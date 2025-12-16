@@ -91,7 +91,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ diagramStore, uiSt
   );
 
   // Handle table drag start
-  const handleTableDragStart = useCallback((tableId: string, e: React.MouseEvent) => {
+  const handleTableDragStart = useCallback((tableId: string, _e: React.MouseEvent) => {
     setDraggedTableId(tableId);
     setIsDragging(false);
   }, []);
