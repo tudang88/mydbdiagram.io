@@ -14,13 +14,13 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "chore: initial project setup"
 
 ### 1.2 Backend Infrastructure
-- [ ] Install Express and dependencies
-- [ ] Create basic Express server setup
-- [ ] Configure CORS middleware
-- [ ] Set up error handling middleware
-- [ ] Set up logging middleware
-- [ ] Create basic route structure
-- [ ] Commit: "feat: backend infrastructure setup"
+- [x] Install Express and dependencies
+- [x] Create basic Express server setup
+- [x] Configure CORS middleware
+- [x] Set up error handling middleware
+- [x] Set up logging middleware
+- [x] Create basic route structure
+- [x] Commit: "feat: backend infrastructure setup"
 
 ### 1.3 Frontend Infrastructure
 - [ ] Choose and set up frontend framework (React/Vue/Vanilla)
