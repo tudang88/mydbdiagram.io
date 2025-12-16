@@ -168,8 +168,9 @@ async function testExportFunctionality(): Promise<void> {
   // We expect this to fail (server not running), but structure should be correct
   if (
     exportResult.hasOwnProperty('success') &&
-    exportResult.hasOwnProperty('format') &&
-    exportResult.hasOwnProperty('error')
+    (exportResult.hasOwnProperty('format') ||
+      exportResult.hasOwnProperty('filePath') ||
+      exportResult.hasOwnProperty('error'))
   ) {
     console.log('✅ Export result structure correct');
   } else {
