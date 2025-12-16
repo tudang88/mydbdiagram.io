@@ -2,13 +2,8 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { DiagramStore } from '../../state/store/diagramStore';
 import { UIStore } from '../../state/store/uiStore';
 import { Diagram } from '../../core/diagram/Diagram';
-import { TableNode } from '../TableNode/TableNode';
-import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
 import { ContextMenu, ContextMenuItem } from '../ContextMenu/ContextMenu';
 import { DiagramContent } from './DiagramContent';
-
-// Memoize viewport calculation
-const MemoizedDiagramContent = React.memo(DiagramContent);
 import { throttle } from '../../utils/debounce';
 import './DiagramCanvas.css';
 
