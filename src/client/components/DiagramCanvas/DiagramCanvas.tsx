@@ -168,26 +168,28 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   }, []);
 
   // Throttled table drag handler for better performance
-  const handleTableDragThrottled = useMemo(
-    () =>
-      throttle((tableId: string, e: React.MouseEvent) => {
-        if (!diagram) return;
+  const handleTableDragThrottled = useMemo(() => {
+    const dragHandler = (tableId: string, e: React.MouseEvent) => {
+      if (!diagram) return;
 
-        const table = diagram.getTable(tableId);
-        if (!table) return;
+      const table = diagram.getTable(tableId);
+      if (!table) return;
 
-        const currentPos = table.getPosition();
-        const zoom = uiStore.getState().zoomLevel;
-        const deltaX = e.movementX / zoom;
-        const deltaY = e.movementY / zoom;
+      const currentPos = table.getPosition();
+      const zoom = uiStore.getState().zoomLevel;
+      const deltaX = e.movementX / zoom;
+      const deltaY = e.movementY / zoom;
 
-        table.moveTo({
-          x: currentPos.x + deltaX,
-          y: currentPos.y + deltaY,
-        });
-      }, 16) as (tableId: string, e: React.MouseEvent) => void, // ~60fps
-    [diagram, uiStore]
-  );
+      table.moveTo({
+        x: currentPos.x + deltaX,
+        y: currentPos.y + deltaY,
+      });
+    };
+    return throttle(dragHandler as (...args: unknown[]) => void, 16) as (
+      tableId: string,
+      e: React.MouseEvent
+    ) => void; // ~60fps
+  }, [diagram, uiStore]);
 
   // Handle table drag
   const handleTableDrag = useCallback(
