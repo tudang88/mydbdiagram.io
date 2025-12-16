@@ -36,6 +36,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
       window.addEventListener('keydown', handleEscape);
       return () => window.removeEventListener('keydown', handleEscape);
     }
+    return undefined;
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
