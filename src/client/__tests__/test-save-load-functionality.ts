@@ -160,7 +160,7 @@ async function testDeleteFunctionality(): Promise<void> {
   }
 
   // Test delete confirmation logic (simulated)
-  const confirmDelete = (diagramId: string): boolean => {
+  const confirmDelete = (_diagramId: string): boolean => {
     // In real implementation, this would show a confirmation dialog
     return true; // Simulated confirmation
   };
