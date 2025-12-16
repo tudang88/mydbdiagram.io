@@ -74,7 +74,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         const currentZoom = uiStore.getState().zoomLevel;
         const newZoom = Math.max(0.5, Math.min(3, currentZoom + delta));
         uiStore.setState({ zoomLevel: newZoom });
-      }, 16), // ~60fps
+      }, 16) as (e: React.WheelEvent<HTMLDivElement>) => void, // ~60fps
     [uiStore]
   );
 
@@ -127,7 +127,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
             },
           });
         }
-      }, 16), // ~60fps
+      }, 16) as (e: React.MouseEvent<HTMLDivElement>) => void, // ~60fps
     [isDragging, dragStart, draggedTableId, uiStore]
   );
 
@@ -185,7 +185,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           x: currentPos.x + deltaX,
           y: currentPos.y + deltaY,
         });
-      }, 16), // ~60fps
+      }, 16) as (tableId: string, e: React.MouseEvent) => void, // ~60fps
     [diagram, uiStore]
   );
 

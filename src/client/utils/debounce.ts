@@ -2,23 +2,24 @@
  * Debounce utility function
  * Delays function execution until after wait time has passed since last invocation
  */
-
 export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: Parameters<T>) => ReturnType<T> {
   let timeout: NodeJS.Timeout | null = null;
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(...args: Parameters<T>): ReturnType<T> {
     const later = () => {
       timeout = null;
-      func(...args);
+      return func(...args);
     };
 
     if (timeout) {
       clearTimeout(timeout);
     }
     timeout = setTimeout(later, wait);
+    // Return the result type (may be Promise)
+    return func(...args) as ReturnType<T>;
   };
 }
 

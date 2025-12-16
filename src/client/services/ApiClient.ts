@@ -100,7 +100,7 @@ export class ApiClient {
         body: data ? JSON.stringify(data) : undefined,
       });
 
-      const result = await this.handleResponse<T>(result);
+      const result = await this.handleResponse<T>(response);
 
       // Invalidate cache for updated resource and list
       if (this.enableCache && result.success) {
