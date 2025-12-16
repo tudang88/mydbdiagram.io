@@ -51,6 +51,29 @@
   gap: 8px;
 }
 
+.draw-button {
+  padding: 4px 12px;
+  background: #28a745;
+  border: none;
+  border-radius: 3px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draw-button:hover {
+  background: #218838;
+}
+
+.draw-button:active {
+  background: #1e7e34;
+}
+
 .format-button {
   padding: 4px 12px;
   background: #0e639c;

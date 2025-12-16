@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { SQLParser } from '../../core/parser/SQLParser';
+import { DBMLParser } from '../../core/parser/DBMLParser';
 import { Diagram } from '../../core/diagram/Diagram';
 import './SQLEditor.css';
 
@@ -22,13 +23,30 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  // Sync SQL text when diagram changes externally
+  // Initialize with example SQL/DBML if editor is empty
   useEffect(() => {
-    if (diagram) {
-      // Generate SQL from diagram (if needed)
-      // For now, we'll keep the user's SQL text
+    if (!sqlText && !diagram) {
+      // Use DBML format as default (similar to dbdiagram.io)
+      const exampleDBML = `Table users {
+  id integer [primary key]
+  username varchar
+  email varchar [unique]
+  created_at timestamp
+}
+
+Table posts {
+  id integer [primary key]
+  user_id integer [not null]
+  title varchar
+  body text
+  created_at timestamp
+}
+
+Ref: posts.user_id > users.id`;
+      setSqlText(exampleDBML);
+      // Don't auto-parse - user must click "Draw" button
     }
-  }, [diagram]);
+  }, []);
 
   // Update line numbers when SQL text changes
   useEffect(() => {
@@ -46,17 +64,26 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   const handleSQLChange = (value: string) => {
     setSqlText(value);
     setError(null);
-
-    // Auto-parse on change (debounced would be better, but for now immediate)
-    if (value.trim()) {
-      parseSQL(value);
-    }
+    // No longer auto-parse - user must click "Draw" button
   };
 
   const parseSQL = (sql: string) => {
     try {
-      const parser = new SQLParser();
-      const result = parser.parse(sql);
+      // Try DBML parser first (for PostgreSQL dialect or DBML format)
+      const dbmlParser = new DBMLParser();
+      if (dbmlParser.canParse(sql)) {
+        const result = dbmlParser.parse(sql);
+        if (result.success && result.data) {
+          onDiagramChange(result.data);
+          setError(null);
+          return;
+        }
+        // If DBML parse failed, try SQL parser as fallback
+      }
+
+      // Fallback to SQL parser
+      const sqlParser = new SQLParser();
+      const result = sqlParser.parse(sql);
 
       if (result.success && result.data) {
         onDiagramChange(result.data);
@@ -81,6 +108,14 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
     setSqlText(formatted);
   };
 
+  const handleDraw = () => {
+    if (!sqlText.trim()) {
+      setError('Please enter SQL statements to draw diagram');
+      return;
+    }
+    parseSQL(sqlText);
+  };
+
   return (
     <div className="sql-editor">
       <div className="sql-editor-header">
@@ -96,6 +131,9 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
           </select>
         </div>
         <div className="editor-actions">
+          <button className="draw-button" onClick={handleDraw} title="Draw/Refresh Diagram">
+            🎨 Draw
+          </button>
           <button className="format-button" onClick={handleFormat} title="Format SQL">
             Format
           </button>
@@ -115,7 +153,41 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
           value={sqlText}
           onChange={e => handleSQLChange(e.target.value)}
           onScroll={handleScroll}
-          placeholder={`-- Write your ${sqlDialect.toUpperCase()} DDL statements here&#10;-- Example:&#10;CREATE TABLE users (&#10;  id INT PRIMARY KEY,&#10;  name VARCHAR(100) NOT NULL&#10;);`}
+          placeholder={
+            sqlDialect === 'postgresql'
+              ? `-- Write your DBML format (like dbdiagram.io)
+-- Example:
+Table users {
+  id integer [primary key]
+  username varchar
+  email varchar [unique]
+  created_at timestamp
+}
+
+Table posts {
+  id integer [primary key]
+  user_id integer [not null]
+  title varchar
+  body text
+  created_at timestamp
+}
+
+Ref: posts.user_id > users.id`
+              : `-- Write your SQL DDL statements here
+-- Example:
+CREATE TABLE users (
+  id INT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE
+);
+
+CREATE TABLE posts (
+  id INT PRIMARY KEY,
+  user_id INT,
+  title VARCHAR(200),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);`
+          }
           spellCheck={false}
         />
       </div>

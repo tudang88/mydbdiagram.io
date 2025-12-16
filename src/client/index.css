@@ -41,13 +41,7 @@ body {
   opacity: 0.8;
 }
 
-.app-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f5f5f5;
-}
+/* App main styles are now in App.css */
 
 .welcome {
   text-align: center;

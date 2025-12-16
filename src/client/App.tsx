@@ -48,6 +48,14 @@ function App() {
   const [sqlDialect, setSqlDialect] = useState<'sql' | 'postgresql'>('sql');
   const [showSQLEditor] = useState(true); // Can be toggled in future
 
+  // Initialize with empty diagram if none exists
+  useEffect(() => {
+    if (!diagramStore.getDiagram()) {
+      const newDiagram = Diagram.create(`diagram-${Date.now()}`);
+      diagramStore.setDiagram(newDiagram);
+    }
+  }, [diagramStore]);
+
   const showNotification = useCallback((type: NotificationType, message: string) => {
     setNotification({ type, message });
   }, []);

@@ -57,33 +57,63 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
     });
   }, [tables, expandedViewport]);
 
-  // Filter relationships where both tables are visible
+  // Filter relationships - show all relationships if both tables exist
+  // Temporarily disable viewport filtering for relationships to debug
   const visibleRelationships = useMemo(() => {
     return relationships.filter(relationship => {
       const fromTable = diagram.getTable(relationship.getFromTableId());
       const toTable = diagram.getTable(relationship.getToTableId());
-      if (!fromTable || !toTable) return false;
+      if (!fromTable || !toTable) {
+        console.warn('⚠️ Relationship missing table:', {
+          relId: relationship.getId(),
+          fromTableId: relationship.getFromTableId(),
+          toTableId: relationship.getToTableId(),
+          fromTableExists: !!fromTable,
+          toTableExists: !!toTable,
+        });
+        return false;
+      }
 
-      const fromPos = fromTable.getPosition();
-      const toPos = toTable.getPosition();
+      // For now, show all relationships if both tables exist
+      // TODO: Re-enable viewport filtering after debugging
+      return true;
 
-      // Check if both tables are in viewport
-      const fromBounds: Bounds = {
-        x: fromPos.x,
-        y: fromPos.y,
-        width: TABLE_WIDTH,
-        height: TABLE_HEADER_HEIGHT + fromTable.getAllColumns().length * COLUMN_HEIGHT,
-      };
-      const toBounds: Bounds = {
-        x: toPos.x,
-        y: toPos.y,
-        width: TABLE_WIDTH,
-        height: TABLE_HEADER_HEIGHT + toTable.getAllColumns().length * COLUMN_HEIGHT,
-      };
-
-      return isInViewport(fromBounds, expandedViewport) || isInViewport(toBounds, expandedViewport);
+      // Original viewport filtering code (commented out for debugging)
+      // const fromPos = fromTable.getPosition();
+      // const toPos = toTable.getPosition();
+      // const fromBounds: Bounds = {
+      //   x: fromPos.x,
+      //   y: fromPos.y,
+      //   width: TABLE_WIDTH,
+      //   height: TABLE_HEADER_HEIGHT + fromTable.getAllColumns().length * COLUMN_HEIGHT,
+      // };
+      // const toBounds: Bounds = {
+      //   x: toPos.x,
+      //   y: toPos.y,
+      //   width: TABLE_WIDTH,
+      //   height: TABLE_HEADER_HEIGHT + toTable.getAllColumns().length * COLUMN_HEIGHT,
+      // };
+      // const relationshipViewport = getExpandedViewport(viewport, 500);
+      // return isInViewport(fromBounds, relationshipViewport) || isInViewport(toBounds, relationshipViewport);
     });
-  }, [relationships, diagram, expandedViewport]);
+  }, [relationships, diagram]);
+
+  // Debug: Log relationships (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔗 DiagramContent - Total relationships:', relationships.length);
+    console.log('🔗 DiagramContent - Visible relationships:', visibleRelationships.length);
+    visibleRelationships.forEach((rel, idx) => {
+      const fromTable = diagram.getTable(rel.getFromTableId());
+      const toTable = diagram.getTable(rel.getToTableId());
+      if (fromTable && toTable) {
+        const fromPos = fromTable.getPosition();
+        const toPos = toTable.getPosition();
+        console.log(
+          `  Relationship ${idx + 1}: ${fromTable.getName()}(${fromPos.x},${fromPos.y}) -> ${toTable.getName()}(${toPos.x},${toPos.y})`
+        );
+      }
+    });
+  }
 
   return (
     <div className="diagram-content">
@@ -91,7 +121,10 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
       {visibleRelationships.map(relationship => {
         const fromTable = diagram.getTable(relationship.getFromTableId());
         const toTable = diagram.getTable(relationship.getToTableId());
-        if (!fromTable || !toTable) return null;
+        if (!fromTable || !toTable) {
+          console.warn('⚠️ Missing table for relationship:', relationship.getId());
+          return null;
+        }
 
         return (
           <RelationshipLine
