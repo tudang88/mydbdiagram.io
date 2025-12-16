@@ -111,14 +111,14 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement diagram API routes"
 
 ### 3.5 Export System
-- [ ] Create Exporter interface
-- [ ] Implement ExporterFactory
-- [ ] Implement JSONExporter
-- [ ] Implement SQLExporter
-- [ ] Create ExportService
-- [ ] Implement ExportController
-- [ ] Add export routes
-- [ ] Commit: "feat: implement export system (JSON, SQL)"
+- [x] Create Exporter interface
+- [x] Implement ExporterFactory
+- [x] Implement JSONExporter
+- [x] Implement SQLExporter
+- [x] Create ExportService
+- [x] Implement ExportController
+- [x] Add export routes
+- [x] Commit: "feat: implement export system (JSON, SQL)"
 
 ### 3.6 Image Exporters
 - [ ] Install canvas/image libraries
