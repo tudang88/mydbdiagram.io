@@ -130,7 +130,6 @@ async function testExportServiceComprehensive(): Promise<void> {
 
   // Test export structure (ExportService uses apiClient, so structure test only)
   try {
-    const diagram = Diagram.create('test-1');
     // ExportService structure verification - actual export requires server
     if (!exportService || typeof exportService !== 'object') {
       throw new Error('ExportService structure incorrect');
