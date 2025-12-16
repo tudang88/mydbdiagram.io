@@ -11,7 +11,6 @@ import { ValidationService } from '../services/ValidationService';
 import { DiagramRepository } from '../repositories/DiagramRepository';
 import { FileRepository } from '../repositories/FileRepository';
 import { ExporterFactory } from '../exporters/ExporterFactory';
-import { ConstraintType } from '../../client/types/common.types';
 
 const TEST_DATA_DIR = './test-data';
 const TEST_OUTPUT_DIR = './test-output';
@@ -57,8 +56,8 @@ async function testDiagramController(): Promise<void> {
 
   const fileRepo = new FileRepository(TEST_DATA_DIR);
   const diagramRepo = new DiagramRepository(fileRepo);
+  const diagramService = new DiagramService(diagramRepo);
   const validator = new ValidationService();
-  const diagramService = new DiagramService(diagramRepo, validator);
   const controller = new DiagramController(diagramService, validator);
 
   // Test create
@@ -199,8 +198,7 @@ async function testExportController(): Promise<void> {
 
   const fileRepo = new FileRepository(TEST_DATA_DIR);
   const diagramRepo = new DiagramRepository(fileRepo);
-  const validator = new ValidationService();
-  const diagramService = new DiagramService(diagramRepo, validator);
+  const diagramService = new DiagramService(diagramRepo);
   const exporterFactory = new ExporterFactory(new FileRepository(TEST_OUTPUT_DIR));
   const exportService = new ExportService(diagramService, exporterFactory);
   const controller = new ExportController(exportService);
