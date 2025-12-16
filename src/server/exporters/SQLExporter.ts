@@ -133,7 +133,7 @@ export class SQLExporter implements Exporter {
    */
   private escapeValue(value: string): string {
     // Simple escaping - wrap in single quotes
-    return `'${value.replace(/'/g, "''")}'`;
+    return `'${value.replace(/'/g, '\'\'')}'`;
   }
 }
 
