@@ -155,6 +155,17 @@ export class Diagram {
     };
   }
 
+  /**
+   * Create a new Diagram with default metadata
+   */
+  static create(id: string): Diagram {
+    const now = new Date().toISOString();
+    return new Diagram(id, {
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
   static fromJSON(data: DiagramData): Diagram {
     const diagram = new Diagram(data.id, data.metadata);
 
