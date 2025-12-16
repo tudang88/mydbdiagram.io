@@ -131,32 +131,32 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 ## Phase 4: Frontend Implementation
 
 ### 4.1 API Client
-- [ ] Implement ApiClient class
-- [ ] Add GET, POST, PUT, DELETE methods
-- [ ] Add error handling
-- [ ] Add response parsing
-- [ ] Commit: "feat: implement API client"
+- [x] Implement ApiClient class
+- [x] Add GET, POST, PUT, DELETE methods
+- [x] Add error handling
+- [x] Add response parsing
+- [x] Commit: "feat: implement API client"
 
 ### 4.2 Services Layer
-- [ ] Implement DiagramService
-- [ ] Implement ExportService
-- [ ] Add error handling
-- [ ] Add type safety
-- [ ] Commit: "feat: implement frontend services"
+- [x] Implement DiagramService
+- [x] Implement ExportService
+- [x] Add error handling
+- [x] Add type safety
+- [x] Commit: "feat: implement frontend services"
 
 ### 4.3 State Management
-- [ ] Implement DiagramStore
-- [ ] Implement UIStore
-- [ ] Add observer pattern
+- [x] Implement DiagramStore
+- [x] Implement UIStore
+- [x] Add observer pattern
 - [ ] Add state persistence (optional)
-- [ ] Commit: "feat: implement state management"
+- [x] Commit: "feat: implement state management"
 
 ### 4.4 Core Parsers
-- [ ] Create Parser interface
-- [ ] Implement JSONParser
-- [ ] Implement SQLParser (basic)
-- [ ] Add parser validation
-- [ ] Commit: "feat: implement parsers"
+- [x] Create Parser interface
+- [x] Implement JSONParser
+- [x] Implement SQLParser (basic)
+- [x] Add parser validation
+- [x] Commit: "feat: implement parsers"
 
 ### 4.5 UI Components - Canvas
 - [ ] Create DiagramCanvas component
