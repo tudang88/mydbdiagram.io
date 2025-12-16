@@ -287,7 +287,7 @@ async function testEditorIntegration(): Promise<void> {
   console.log('✅ Validation integration (table) working');
 
   const errors2 = validateTable('ValidTable', { x: -10, y: 100 });
-  if (errors2.length === 0) {
+  if (errors2.length === 0 || errors2[0].field !== 'position') {
     throw new Error('Validation integration (position) failed');
   }
   console.log('✅ Validation integration (position) working');
