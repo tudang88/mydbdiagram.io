@@ -19,7 +19,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   diagramStore,
   uiStore,
   onTableDoubleClick,
-  onColumnDoubleClick,
+  onColumnDoubleClick: _onColumnDoubleClick, // Reserved for future column editing
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [diagram, setDiagram] = useState<Diagram | null>(null);
