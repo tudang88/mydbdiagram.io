@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, memo } from 'react';
 import { Table } from '../../core/table/Table';
 import './TableNode.css';
 
@@ -12,7 +12,7 @@ interface TableNodeProps {
   onDragEnd: () => void;
 }
 
-export const TableNode: React.FC<TableNodeProps> = ({
+const TableNodeComponent: React.FC<TableNodeProps> = ({
   table,
   isSelected,
   onSelect,
@@ -84,4 +84,17 @@ export const TableNode: React.FC<TableNodeProps> = ({
     </div>
   );
 };
+
+// Memoize TableNode to prevent unnecessary re-renders
+export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.table.getId() === nextProps.table.getId() &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.table.getPosition().x === nextProps.table.getPosition().x &&
+    prevProps.table.getPosition().y === nextProps.table.getPosition().y &&
+    prevProps.table.getName() === nextProps.table.getName() &&
+    prevProps.table.getAllColumns().length === nextProps.table.getAllColumns().length
+  );
+});
 

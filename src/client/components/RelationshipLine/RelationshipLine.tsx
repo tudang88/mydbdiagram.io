@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Relationship } from '../../core/relationship/Relationship';
 import { Table } from '../../core/table/Table';
 import './RelationshipLine.css';

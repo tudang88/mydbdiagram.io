@@ -1,10 +1,15 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { DiagramStore } from '../../state/store/diagramStore';
 import { UIStore } from '../../state/store/uiStore';
 import { Diagram } from '../../core/diagram/Diagram';
 import { TableNode } from '../TableNode/TableNode';
 import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
 import { ContextMenu, ContextMenuItem } from '../ContextMenu/ContextMenu';
+import { DiagramContent } from './DiagramContent';
+
+// Memoize viewport calculation
+const MemoizedDiagramContent = React.memo(DiagramContent);
+import { throttle } from '../../utils/debounce';
 import './DiagramCanvas.css';
 
 interface DiagramCanvasProps {
@@ -60,15 +65,24 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     return unsubscribe;
   }, [uiStore]);
 
-  // Handle wheel zoom
+  // Throttled wheel zoom handler for better performance
+  const handleWheelThrottled = useMemo(
+    () =>
+      throttle((e: React.WheelEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const currentZoom = uiStore.getState().zoomLevel;
+        const newZoom = Math.max(0.5, Math.min(3, currentZoom + delta));
+        uiStore.setState({ zoomLevel: newZoom });
+      }, 16), // ~60fps
+    [uiStore]
+  );
+
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Math.max(0.5, Math.min(3, uiState.zoomLevel + delta));
-      uiStore.setState({ zoomLevel: newZoom });
+      handleWheelThrottled(e);
     },
-    [uiState.zoomLevel, uiStore]
+    [handleWheelThrottled]
   );
 
   // Handle pan start (only if not clicking on a table)
@@ -101,19 +115,28 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     [uiState.panOffset]
   );
 
+  // Throttled pan move handler for better performance
+  const handleMouseMoveThrottled = useMemo(
+    () =>
+      throttle((e: React.MouseEvent<HTMLDivElement>) => {
+        if (isDragging && !draggedTableId) {
+          uiStore.setState({
+            panOffset: {
+              x: e.clientX - dragStart.x,
+              y: e.clientY - dragStart.y,
+            },
+          });
+        }
+      }, 16), // ~60fps
+    [isDragging, dragStart, draggedTableId, uiStore]
+  );
+
   // Handle pan move
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isDragging && !draggedTableId) {
-        uiStore.setState({
-          panOffset: {
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y,
-          },
-        });
-      }
+      handleMouseMoveThrottled(e);
     },
-    [isDragging, dragStart, draggedTableId, uiStore]
+    [handleMouseMoveThrottled]
   );
 
   // Handle pan end
@@ -144,24 +167,34 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     setIsDragging(false);
   }, []);
 
+  // Throttled table drag handler for better performance
+  const handleTableDragThrottled = useMemo(
+    () =>
+      throttle((tableId: string, e: React.MouseEvent) => {
+        if (!diagram) return;
+
+        const table = diagram.getTable(tableId);
+        if (!table) return;
+
+        const currentPos = table.getPosition();
+        const zoom = uiStore.getState().zoomLevel;
+        const deltaX = e.movementX / zoom;
+        const deltaY = e.movementY / zoom;
+
+        table.moveTo({
+          x: currentPos.x + deltaX,
+          y: currentPos.y + deltaY,
+        });
+      }, 16), // ~60fps
+    [diagram, uiStore]
+  );
+
   // Handle table drag
   const handleTableDrag = useCallback(
-    (_tableId: string, e: React.MouseEvent) => {
-      if (!diagram) return;
-
-      const table = diagram.getTable(_tableId);
-      if (!table) return;
-
-      const currentPos = table.getPosition();
-      const deltaX = e.movementX / uiState.zoomLevel;
-      const deltaY = e.movementY / uiState.zoomLevel;
-
-      table.moveTo({
-        x: currentPos.x + deltaX,
-        y: currentPos.y + deltaY,
-      });
+    (tableId: string, e: React.MouseEvent) => {
+      handleTableDragThrottled(tableId, e);
     },
-    [diagram, uiState.zoomLevel]
+    [handleTableDragThrottled]
   );
 
   // Handle table drag end
@@ -321,37 +354,22 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         }}
       >
         {diagram && (
-          <div className="diagram-content">
-            {/* Render relationships first (behind tables) */}
-            {diagram.getAllRelationships().map((relationship) => {
-              const fromTable = diagram.getTable(relationship.getFromTableId());
-              const toTable = diagram.getTable(relationship.getToTableId());
-              if (!fromTable || !toTable) return null;
-
-              return (
-                <RelationshipLine
-                  key={relationship.getId()}
-                  relationship={relationship}
-                  fromTable={fromTable}
-                  toTable={toTable}
-                />
-              );
-            })}
-
-            {/* Render tables */}
-            {diagram.getAllTables().map((table) => (
-              <TableNode
-                key={table.getId()}
-                table={table}
-                isSelected={uiState.selectedTableId === table.getId()}
-                onSelect={handleTableSelect}
-                onDoubleClick={handleTableDoubleClick}
-                onDragStart={handleTableDragStart}
-                onDrag={handleTableDrag}
-                onDragEnd={handleTableDragEnd}
-              />
-            ))}
-          </div>
+          <DiagramContent
+            diagram={diagram}
+            uiState={uiState}
+            viewport={{
+              x: uiState.panOffset.x,
+              y: uiState.panOffset.y,
+              width: canvasRef.current?.clientWidth || 0,
+              height: canvasRef.current?.clientHeight || 0,
+              zoom: uiState.zoomLevel,
+            }}
+            onTableSelect={handleTableSelect}
+            onTableDoubleClick={handleTableDoubleClick}
+            onTableDragStart={handleTableDragStart}
+            onTableDrag={handleTableDrag}
+            onTableDragEnd={handleTableDragEnd}
+          />
         )}
         {!diagram && (
           <div className="canvas-empty">

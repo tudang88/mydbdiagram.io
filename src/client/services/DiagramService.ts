@@ -2,6 +2,7 @@ import { ApiClient } from './ApiClient';
 import { DiagramData } from '../types/diagram.types';
 import { DiagramValidator } from '../core/validator/DiagramValidator';
 import { Diagram } from '../core/diagram/Diagram';
+import { debounce } from '../utils/debounce';
 
 /**
  * Service for Diagram operations
@@ -35,10 +36,33 @@ export class DiagramService {
     private validator: DiagramValidator
   ) {}
 
+  // Debounced save function to prevent excessive API calls
+  private debouncedSave: ((diagram: Diagram) => Promise<SaveResult>) | null = null;
+
   /**
-   * Save diagram
+   * Save diagram with debouncing for auto-save scenarios
    */
-  async saveDiagram(diagram: Diagram): Promise<SaveResult> {
+  async saveDiagram(diagram: Diagram, debounceMs: number = 0): Promise<SaveResult> {
+    // If debounce is requested, use debounced version
+    if (debounceMs > 0) {
+      if (!this.debouncedSave) {
+        this.debouncedSave = debounce(
+          async (d: Diagram) => {
+            return this.saveDiagramInternal(d);
+          },
+          debounceMs
+        ) as (diagram: Diagram) => Promise<SaveResult>;
+      }
+      return this.debouncedSave(diagram);
+    }
+
+    return this.saveDiagramInternal(diagram);
+  }
+
+  /**
+   * Internal save implementation
+   */
+  private async saveDiagramInternal(diagram: Diagram): Promise<SaveResult> {
     // Validate diagram
     const validation = this.validator.validate(diagram);
     if (!validation.isValid) {
