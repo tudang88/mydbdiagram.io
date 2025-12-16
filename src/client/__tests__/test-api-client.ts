@@ -30,7 +30,10 @@ async function testApiClient(): Promise<void> {
   // Test POST request structure
   const postResponse = await apiClient.post('/api/test', { test: 'data' });
   // We expect this to fail (endpoint doesn't exist), but structure should be correct
-  if (postResponse.hasOwnProperty('success') && postResponse.hasOwnProperty('error')) {
+  if (
+    Object.prototype.hasOwnProperty.call(postResponse, 'success') &&
+    Object.prototype.hasOwnProperty.call(postResponse, 'error')
+  ) {
     console.log('✅ POST request structure correct');
   } else {
     throw new Error('ApiClient POST structure incorrect');
@@ -38,7 +41,7 @@ async function testApiClient(): Promise<void> {
 
   // Test PUT request structure
   const putResponse = await apiClient.put('/api/test', { test: 'data' });
-  if (putResponse.hasOwnProperty('success')) {
+  if (Object.prototype.hasOwnProperty.call(putResponse, 'success')) {
     console.log('✅ PUT request structure correct');
   } else {
     throw new Error('ApiClient PUT structure incorrect');
@@ -46,7 +49,7 @@ async function testApiClient(): Promise<void> {
 
   // Test DELETE request structure
   const deleteResponse = await apiClient.delete('/api/test');
-  if (deleteResponse.hasOwnProperty('success')) {
+  if (Object.prototype.hasOwnProperty.call(deleteResponse, 'success')) {
     console.log('✅ DELETE request structure correct');
   } else {
     throw new Error('ApiClient DELETE structure incorrect');
