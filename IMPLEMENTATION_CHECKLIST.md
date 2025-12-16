@@ -308,11 +308,11 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [ ] Commit: "test: final testing and bug fixes"
 
 ### 8.3 Release Preparation
-- [ ] Update version number
-- [ ] Create changelog
-- [ ] Final documentation review
-- [ ] Prepare release notes
-- [ ] Commit: "chore: prepare for release"
+- [x] Update version number
+- [x] Create changelog
+- [x] Final documentation review
+- [x] Prepare release notes
+- [x] Commit: "chore: prepare for release"
 
 ## Notes
 
