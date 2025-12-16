@@ -130,14 +130,20 @@ async function testErrorHandlingIntegration(): Promise<void> {
   const saveResult = await diagramService.saveDiagram(diagram);
 
   // Should handle error gracefully
-  if (!saveResult.hasOwnProperty('success') || !saveResult.hasOwnProperty('errors')) {
+  if (
+    !Object.prototype.hasOwnProperty.call(saveResult, 'success') ||
+    !Object.prototype.hasOwnProperty.call(saveResult, 'errors')
+  ) {
     throw new Error('Save error handling structure incorrect');
   }
   console.log('✅ Save error handling working');
 
   // Test load error handling
   const loadResult = await diagramService.loadDiagram('nonexistent');
-  if (!loadResult.hasOwnProperty('success') || !loadResult.hasOwnProperty('error')) {
+  if (
+    !Object.prototype.hasOwnProperty.call(loadResult, 'success') ||
+    !Object.prototype.hasOwnProperty.call(loadResult, 'error')
+  ) {
     throw new Error('Load error handling structure incorrect');
   }
   console.log('✅ Load error handling working');

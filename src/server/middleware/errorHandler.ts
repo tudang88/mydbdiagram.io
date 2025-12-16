@@ -27,7 +27,7 @@ export const errorHandler = (
   // Determine error type and status code
   let statusCode = 500;
   let errorCode = 'INTERNAL_ERROR';
-  let message = err.message || 'An unexpected error occurred';
+  const message = err.message || 'An unexpected error occurred';
 
   // Handle specific error types
   if (err.name === 'ValidationError') {

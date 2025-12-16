@@ -115,7 +115,7 @@ export class DiagramService {
    */
   async listDiagrams(): Promise<
     ListResult<Array<{ id: string; name?: string; updatedAt?: string }>>
-  > {
+    > {
     const response = await this.apiClient.get<{ diagrams: DiagramData[] }>('/api/diagrams');
 
     if (!response.success) {
