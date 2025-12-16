@@ -9,7 +9,6 @@
 import { DiagramStore } from '../state/store/diagramStore';
 import { JSONParser } from '../core/parser/JSONParser';
 import { SQLParser } from '../core/parser/SQLParser';
-import { Diagram } from '../core/diagram/Diagram';
 
 async function testImportDialogLogic(): Promise<void> {
   console.log('\n🧪 Testing ImportDialog Logic...');
@@ -351,7 +350,8 @@ async function testFileImportSimulation(): Promise<void> {
 
   // Test unsupported file
   const txtFile = await simulateFileRead('diagram.txt', 'some text');
-  if (txtFile.extension === 'sql' || txtFile.extension === 'json') {
+  const isSupported = txtFile.extension === 'sql' || txtFile.extension === 'json';
+  if (isSupported) {
     throw new Error('Unsupported file detection failed');
   }
   console.log('✅ Unsupported file handling working');
