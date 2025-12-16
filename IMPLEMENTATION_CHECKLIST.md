@@ -187,11 +187,11 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement editor components"
 
 ### 4.9 UI Components - Toolbar
-- [ ] Create Toolbar component
-- [ ] Add New/Save/Load buttons
-- [ ] Add Export menu
-- [ ] Add Import functionality
-- [ ] Commit: "feat: implement toolbar component"
+- [x] Create Toolbar component
+- [x] Add New/Save/Load buttons
+- [x] Add Export menu
+- [x] Add Import functionality
+- [x] Commit: "feat: implement toolbar component"
 
 ### 4.10 UI Integration
 - [ ] Connect all components
