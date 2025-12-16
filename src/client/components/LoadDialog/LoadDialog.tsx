@@ -129,7 +129,7 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
 
   return (
     <div className="load-dialog-overlay" onClick={handleCancel}>
-      <div className="load-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="load-dialog" onClick={e => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Load Diagram</h2>
           <button className="close-button" onClick={handleCancel} disabled={isLoading}>
@@ -150,12 +150,14 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
           )}
 
           {!isLoading && diagrams.length === 0 && !error && (
-            <div className="empty-message">No diagrams found. Create a new diagram to get started.</div>
+            <div className="empty-message">
+              No diagrams found. Create a new diagram to get started.
+            </div>
           )}
 
           {diagrams.length > 0 && (
             <div className="diagram-list">
-              {diagrams.map((diagram) => (
+              {diagrams.map(diagram => (
                 <div
                   key={diagram.id}
                   className={`diagram-item ${selectedId === diagram.id ? 'selected' : ''}`}
@@ -166,13 +168,15 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
                     <div className="diagram-meta">
                       <span className="diagram-id">ID: {diagram.id}</span>
                       {diagram.updatedAt && (
-                        <span className="diagram-date">Updated: {formatDate(diagram.updatedAt)}</span>
+                        <span className="diagram-date">
+                          Updated: {formatDate(diagram.updatedAt)}
+                        </span>
                       )}
                     </div>
                   </div>
                   <button
                     className="delete-button"
-                    onClick={(e) => handleDelete(diagram.id, e)}
+                    onClick={e => handleDelete(diagram.id, e)}
                     disabled={isLoading}
                     title="Delete diagram"
                   >
@@ -205,4 +209,3 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
     </div>
   );
 };
-

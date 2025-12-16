@@ -31,7 +31,10 @@ const uiStore = new UIStore();
 
 function App() {
   const [error, setError] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: NotificationType; message: string } | null>(null);
+  const [notification, setNotification] = useState<{
+    type: NotificationType;
+    message: string;
+  } | null>(null);
   const [loading] = useState(false); // Reserved for future loading states
   const [loadingMessage] = useState<string | undefined>();
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -90,22 +93,19 @@ function App() {
     }
   }, []);
 
-  const handleTableSave = useCallback(
-    (_table: Table) => {
-      const diagram = diagramStore.getDiagram();
-      if (!diagram) return;
+  const handleTableSave = useCallback((_table: Table) => {
+    const diagram = diagramStore.getDiagram();
+    if (!diagram) return;
 
-      try {
-        // Table is already updated by the editor
-        setEditingTable(null);
-        setEditingTableId(null);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save table');
-      }
-    },
-    []
-  );
+    try {
+      // Table is already updated by the editor
+      setEditingTable(null);
+      setEditingTableId(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save table');
+    }
+  }, []);
 
   const handleTableCancel = useCallback(() => {
     setEditingTable(null);
@@ -208,11 +208,7 @@ function App() {
     if (!currentDiagram) return;
 
     try {
-      const table = new Table(
-        `table-${Date.now()}`,
-        'NewTable',
-        { x: 200, y: 200 }
-      );
+      const table = new Table(`table-${Date.now()}`, 'NewTable', { x: 200, y: 200 });
       currentDiagram.addTable(table);
       uiStore.setState({ selectedTableId: table.getId() });
       setError(null);
@@ -258,11 +254,7 @@ function App() {
           />
         )}
         {editingTable && (
-          <TableEditor
-            table={editingTable}
-            onSave={handleTableSave}
-            onCancel={handleTableCancel}
-          />
+          <TableEditor table={editingTable} onSave={handleTableSave} onCancel={handleTableCancel} />
         )}
         {editingColumn && (
           <ColumnEditor

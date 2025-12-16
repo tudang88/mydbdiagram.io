@@ -32,10 +32,10 @@ export class FileRepository {
   async writeJSON<T>(filePath: string, data: T): Promise<void> {
     const fullPath = this.getFullPath(filePath);
     const dir = join(fullPath, '..');
-    
+
     // Ensure directory exists
     await this.ensureDirectoryExists(dir);
-    
+
     // Write file
     await fs.writeFile(fullPath, JSON.stringify(data, null, 2), 'utf-8');
   }
@@ -47,7 +47,7 @@ export class FileRepository {
     try {
       const fullPath = this.getFullPath(directory);
       const files = await fs.readdir(fullPath);
-      return files.filter((file) => file.endsWith('.json'));
+      return files.filter(file => file.endsWith('.json'));
     } catch (error: unknown) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return [];
@@ -109,4 +109,3 @@ export class FileRepository {
     }
   }
 }
-

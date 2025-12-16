@@ -63,4 +63,3 @@ export class ExportService {
     return await this.apiClient.get<{ formats: string[] }>('/api/diagrams/formats');
   }
 }
-

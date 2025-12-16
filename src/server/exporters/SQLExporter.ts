@@ -53,17 +53,17 @@ export class SQLExporter implements Exporter {
     lines.push('');
 
     // Generate CREATE TABLE statements
-    diagram.tables.forEach((table) => {
+    diagram.tables.forEach(table => {
       lines.push(`CREATE TABLE ${this.escapeIdentifier(table.name)} (`);
 
       const columnDefinitions: string[] = [];
       const constraints: string[] = [];
 
-      table.columns.forEach((column) => {
+      table.columns.forEach(column => {
         let columnDef = `  ${this.escapeIdentifier(column.name)} ${column.type}`;
 
         // Add constraints
-        column.constraints.forEach((constraint) => {
+        column.constraints.forEach(constraint => {
           if (constraint.type === 'PRIMARY_KEY') {
             constraints.push(`  PRIMARY KEY (${this.escapeIdentifier(column.name)})`);
           } else if (constraint.type === 'NOT_NULL') {
@@ -100,11 +100,11 @@ export class SQLExporter implements Exporter {
     });
 
     // Generate FOREIGN KEY constraints
-    diagram.relationships.forEach((relationship) => {
-      const fromTable = diagram.tables.find((t) => t.id === relationship.fromTableId);
-      const toTable = diagram.tables.find((t) => t.id === relationship.toTableId);
-      const fromColumn = fromTable?.columns.find((c) => c.id === relationship.fromColumnId);
-      const toColumn = toTable?.columns.find((c) => c.id === relationship.toColumnId);
+    diagram.relationships.forEach(relationship => {
+      const fromTable = diagram.tables.find(t => t.id === relationship.fromTableId);
+      const toTable = diagram.tables.find(t => t.id === relationship.toTableId);
+      const fromColumn = fromTable?.columns.find(c => c.id === relationship.fromColumnId);
+      const toColumn = toTable?.columns.find(c => c.id === relationship.toColumnId);
 
       if (fromTable && toTable && fromColumn && toColumn) {
         const constraintName = `fk_${fromTable.name}_${toTable.name}`;
@@ -133,7 +133,6 @@ export class SQLExporter implements Exporter {
    */
   private escapeValue(value: string): string {
     // Simple escaping - wrap in single quotes
-    return `'${value.replace(/'/g, '\'\'')}'`;
+    return `'${value.replace(/'/g, "''")}'`;
   }
 }
-

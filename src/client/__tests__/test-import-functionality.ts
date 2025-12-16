@@ -1,7 +1,7 @@
 /**
  * Unit tests for Import Functionality
  * Run with: npx tsx src/client/__tests__/test-import-functionality.ts
- * 
+ *
  * Note: These tests verify import logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -44,7 +44,10 @@ async function testImportDialogLogic(): Promise<void> {
   console.log('✅ File extension detection working');
 
   // Test validation logic
-  const validateInput = (text: string, mode: 'sql' | 'json'): { isValid: boolean; error?: string } => {
+  const validateInput = (
+    text: string,
+    mode: 'sql' | 'json'
+  ): { isValid: boolean; error?: string } => {
     try {
       let parser: JSONParser | SQLParser;
       if (mode === 'sql') {
@@ -55,7 +58,7 @@ async function testImportDialogLogic(): Promise<void> {
       const validation = parser.validate(text);
       return {
         isValid: validation.isValid,
-        error: validation.errors?.map((e) => `${e.field}: ${e.message}`).join('\n'),
+        error: validation.errors?.map(e => `${e.field}: ${e.message}`).join('\n'),
       };
     } catch (err) {
       return {
@@ -132,7 +135,7 @@ async function testSQLImport(): Promise<void> {
     throw new Error('SQL import should parse multiple tables');
   }
 
-  const usersTable = tables.find((t) => t.getName() === 'Users');
+  const usersTable = tables.find(t => t.getName() === 'Users');
   if (!usersTable) {
     throw new Error('SQL import failed to parse Users table');
   }
@@ -376,4 +379,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

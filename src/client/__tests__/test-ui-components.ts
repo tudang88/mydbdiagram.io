@@ -1,7 +1,7 @@
 /**
  * Unit tests for UI Components
  * Run with: npx tsx src/client/__tests__/test-ui-components.ts
- * 
+ *
  * Note: These tests verify component logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -34,7 +34,7 @@ async function testDiagramCanvasIntegration(): Promise<void> {
 
   // Test diagram subscription
   let notified = false;
-  const unsubscribe = diagramStore.subscribe((diagram) => {
+  const unsubscribe = diagramStore.subscribe(diagram => {
     if (diagram !== null) {
       notified = true;
     }
@@ -47,7 +47,7 @@ async function testDiagramCanvasIntegration(): Promise<void> {
   diagramStore.setDiagram(diagram);
 
   // Give a moment for notification
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise(resolve => setTimeout(resolve, 10));
 
   if (!notified) {
     throw new Error('DiagramStore subscription not working');
@@ -71,7 +71,7 @@ async function testTableNodeLogic(): Promise<void> {
 
   // Create test table
   const table = new Table('table-1', 'Users', { x: 100, y: 100 });
-  
+
   // Test table properties
   if (table.getId() !== 'table-1' || table.getName() !== 'Users') {
     throw new Error('Table properties incorrect');
@@ -161,9 +161,7 @@ async function testRelationshipLineLogic(): Promise<void> {
   // Test position calculation (simulated)
   const fromPos = table1.getPosition();
   const toPos = table2.getPosition();
-  const distance = Math.sqrt(
-    Math.pow(toPos.x - fromPos.x, 2) + Math.pow(toPos.y - fromPos.y, 2)
-  );
+  const distance = Math.sqrt(Math.pow(toPos.x - fromPos.x, 2) + Math.pow(toPos.y - fromPos.y, 2));
   if (distance < 0) {
     throw new Error('Position calculation failed');
   }
@@ -278,4 +276,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

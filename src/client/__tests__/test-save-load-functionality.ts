@@ -1,7 +1,7 @@
 /**
  * Unit tests for Save/Load Functionality
  * Run with: npx tsx src/client/__tests__/test-save-load-functionality.ts
- * 
+ *
  * Note: These tests verify save/load logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -122,7 +122,7 @@ async function testListDiagrams(): Promise<void> {
   };
 
   const transformList = (data: typeof mockListData) => {
-    return data.diagrams.map((diagram) => ({
+    return data.diagrams.map(diagram => ({
       id: diagram.id,
       name: diagram.tables[0]?.name || 'Untitled',
       updatedAt: diagram.metadata.updatedAt,
@@ -326,4 +326,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

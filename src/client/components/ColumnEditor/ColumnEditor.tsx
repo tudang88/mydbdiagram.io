@@ -31,18 +31,16 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
   }, [column]);
 
   const handleConstraintToggle = (constraintType: ConstraintType) => {
-    const existing = constraints.find((c) => c.type === constraintType);
+    const existing = constraints.find(c => c.type === constraintType);
     if (existing) {
-      setConstraints(constraints.filter((c) => c.type !== constraintType));
+      setConstraints(constraints.filter(c => c.type !== constraintType));
     } else {
       setConstraints([...constraints, { type: constraintType }]);
     }
   };
 
   const handleConstraintValueChange = (constraintType: ConstraintType, value: string) => {
-    setConstraints(
-      constraints.map((c) => (c.type === constraintType ? { ...c, value } : c))
-    );
+    setConstraints(constraints.map(c => (c.type === constraintType ? { ...c, value } : c)));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,12 +97,12 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
   }
 
   const hasConstraint = (constraintType: ConstraintType) => {
-    return constraints.some((c) => c.type === constraintType);
+    return constraints.some(c => c.type === constraintType);
   };
 
   return (
     <div className="column-editor-overlay" onClick={handleCancel}>
-      <div className="column-editor" onClick={(e) => e.stopPropagation()}>
+      <div className="column-editor" onClick={e => e.stopPropagation()}>
         <div className="editor-header">
           <h2>Edit Column</h2>
           <button className="close-button" onClick={handleCancel}>
@@ -119,15 +117,13 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
               id="column-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={errors.some((e) => e.field === 'name') ? 'error' : ''}
+              onChange={e => setName(e.target.value)}
+              className={errors.some(e => e.field === 'name') ? 'error' : ''}
               placeholder="Enter column name"
               autoFocus
             />
-            {errors.some((e) => e.field === 'name') && (
-              <span className="error-message">
-                {errors.find((e) => e.field === 'name')?.message}
-              </span>
+            {errors.some(e => e.field === 'name') && (
+              <span className="error-message">{errors.find(e => e.field === 'name')?.message}</span>
             )}
           </div>
 
@@ -137,14 +133,12 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
               id="column-type"
               type="text"
               value={type}
-              onChange={(e) => setType(e.target.value)}
-              className={errors.some((e) => e.field === 'type') ? 'error' : ''}
+              onChange={e => setType(e.target.value)}
+              className={errors.some(e => e.field === 'type') ? 'error' : ''}
               placeholder="e.g., VARCHAR(255), INTEGER, DATE"
             />
-            {errors.some((e) => e.field === 'type') && (
-              <span className="error-message">
-                {errors.find((e) => e.field === 'type')?.message}
-              </span>
+            {errors.some(e => e.field === 'type') && (
+              <span className="error-message">{errors.find(e => e.field === 'type')?.message}</span>
             )}
           </div>
 
@@ -154,7 +148,7 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
               id="column-default"
               type="text"
               value={defaultValue}
-              onChange={(e) => setDefaultValue(e.target.value)}
+              onChange={e => setDefaultValue(e.target.value)}
               placeholder="Default value"
             />
           </div>
@@ -164,7 +158,7 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
             <textarea
               id="column-comment"
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={e => setComment(e.target.value)}
               placeholder="Column description"
               rows={3}
             />
@@ -191,8 +185,8 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
                 {hasConstraint('FOREIGN_KEY') && (
                   <input
                     type="text"
-                    value={constraints.find((c) => c.type === 'FOREIGN_KEY')?.value || ''}
-                    onChange={(e) => handleConstraintValueChange('FOREIGN_KEY', e.target.value)}
+                    value={constraints.find(c => c.type === 'FOREIGN_KEY')?.value || ''}
+                    onChange={e => handleConstraintValueChange('FOREIGN_KEY', e.target.value)}
                     placeholder="e.g., Users.id"
                     className="constraint-value"
                   />
@@ -238,4 +232,3 @@ export const ColumnEditor: React.FC<ColumnEditorProps> = ({ column, onSave, onCa
     </div>
   );
 };
-

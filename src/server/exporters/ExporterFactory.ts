@@ -47,4 +47,3 @@ export class ExporterFactory {
     return this.exporters.has(format.toLowerCase());
   }
 }
-

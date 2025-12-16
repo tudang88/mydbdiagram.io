@@ -53,7 +53,7 @@ export class Diagram {
         relationshipsToRemove.push(relId);
       }
     });
-    relationshipsToRemove.forEach((relId) => this.relationships.delete(relId));
+    relationshipsToRemove.forEach(relId => this.relationships.delete(relId));
 
     this.tables.delete(tableId);
     this.updateMetadata();
@@ -71,9 +71,7 @@ export class Diagram {
   addRelationship(relationship: Relationship | RelationshipType): void {
     // Convert type to class if needed
     const relationshipInstance =
-      relationship instanceof Relationship
-        ? relationship
-        : Relationship.fromJSON(relationship);
+      relationship instanceof Relationship ? relationship : Relationship.fromJSON(relationship);
     if (this.relationships.has(relationshipInstance.getId())) {
       throw new Error(`Relationship with id ${relationshipInstance.getId()} already exists`);
     }
@@ -111,7 +109,7 @@ export class Diagram {
     const errors: Array<{ field: string; message: string }> = [];
 
     // Validate tables
-    this.tables.forEach((table) => {
+    this.tables.forEach(table => {
       const name = table.getName();
       if (!name || name.trim() === '') {
         errors.push({
@@ -122,7 +120,7 @@ export class Diagram {
     });
 
     // Validate relationships
-    this.relationships.forEach((rel) => {
+    this.relationships.forEach(rel => {
       const fromTableId = rel.getFromTableId();
       const toTableId = rel.getToTableId();
       if (!this.tables.has(fromTableId)) {
@@ -149,8 +147,8 @@ export class Diagram {
   toJSON(): DiagramData {
     return {
       id: this.id,
-      tables: this.getAllTables().map((table) => table.toJSON()),
-      relationships: this.getAllRelationships().map((rel) => rel.toJSON()),
+      tables: this.getAllTables().map(table => table.toJSON()),
+      relationships: this.getAllRelationships().map(rel => rel.toJSON()),
       metadata: this.getMetadata(),
     };
   }
@@ -170,13 +168,13 @@ export class Diagram {
     const diagram = new Diagram(data.id, data.metadata);
 
     // Add tables first
-    data.tables.forEach((tableData) => {
+    data.tables.forEach(tableData => {
       const table = Table.fromJSON(tableData);
       diagram.tables.set(table.getId(), table);
     });
 
     // Then add relationships
-    data.relationships.forEach((relationshipData) => {
+    data.relationships.forEach(relationshipData => {
       const relationship = Relationship.fromJSON(relationshipData);
       diagram.relationships.set(relationship.getId(), relationship);
     });
@@ -189,4 +187,3 @@ export class Diagram {
     this.metadata.updatedAt = new Date().toISOString();
   }
 }
-

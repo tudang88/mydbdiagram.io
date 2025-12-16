@@ -36,10 +36,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   onTableDragEnd,
 }) => {
   // Get expanded viewport for pre-rendering (with padding)
-  const expandedViewport = useMemo(
-    () => getExpandedViewport(viewport, 200),
-    [viewport]
-  );
+  const expandedViewport = useMemo(() => getExpandedViewport(viewport, 200), [viewport]);
 
   // Memoize tables and relationships
   const tables = useMemo(() => diagram.getAllTables(), [diagram]);
@@ -47,7 +44,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
 
   // Filter tables visible in viewport (with padding for smooth scrolling)
   const visibleTables = useMemo(() => {
-    return tables.filter((table) => {
+    return tables.filter(table => {
       const pos = table.getPosition();
       const columnCount = table.getAllColumns().length;
       const bounds: Bounds = {
@@ -62,7 +59,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
 
   // Filter relationships where both tables are visible
   const visibleRelationships = useMemo(() => {
-    return relationships.filter((relationship) => {
+    return relationships.filter(relationship => {
       const fromTable = diagram.getTable(relationship.getFromTableId());
       const toTable = diagram.getTable(relationship.getToTableId());
       if (!fromTable || !toTable) return false;
@@ -84,17 +81,14 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
         height: TABLE_HEADER_HEIGHT + toTable.getAllColumns().length * COLUMN_HEIGHT,
       };
 
-      return (
-        isInViewport(fromBounds, expandedViewport) ||
-        isInViewport(toBounds, expandedViewport)
-      );
+      return isInViewport(fromBounds, expandedViewport) || isInViewport(toBounds, expandedViewport);
     });
   }, [relationships, diagram, expandedViewport]);
 
   return (
     <div className="diagram-content">
       {/* Render relationships first (behind tables) */}
-      {visibleRelationships.map((relationship) => {
+      {visibleRelationships.map(relationship => {
         const fromTable = diagram.getTable(relationship.getFromTableId());
         const toTable = diagram.getTable(relationship.getToTableId());
         if (!fromTable || !toTable) return null;
@@ -110,7 +104,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
       })}
 
       {/* Render only visible tables */}
-      {visibleTables.map((table) => (
+      {visibleTables.map(table => (
         <TableNode
           key={table.getId()}
           table={table}
@@ -139,4 +133,3 @@ export const DiagramContent = memo(DiagramContentComponent, (prevProps, nextProp
     prevProps.viewport.height === nextProps.viewport.height
   );
 });
-

@@ -77,7 +77,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       } else if (result.data) {
         // Create blob and download
         const blob = new Blob([result.data as string], {
-          type: selectedFormat === 'json' ? 'application/json' : selectedFormat === 'sql' ? 'text/plain' : 'image/svg+xml',
+          type:
+            selectedFormat === 'json'
+              ? 'application/json'
+              : selectedFormat === 'sql'
+                ? 'text/plain'
+                : 'image/svg+xml',
         });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -118,7 +123,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
   return (
     <div className="export-dialog-overlay" onClick={handleCancel}>
-      <div className="export-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="export-dialog" onClick={e => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Export Diagram</h2>
           <button className="close-button" onClick={handleCancel} disabled={isExporting}>
@@ -130,14 +135,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           <div className="format-selection">
             <label className="format-label">Select Export Format:</label>
             <div className="format-options">
-              {SUPPORTED_FORMATS.map((format) => (
+              {SUPPORTED_FORMATS.map(format => (
                 <label key={format.value} className="format-option">
                   <input
                     type="radio"
                     name="export-format"
                     value={format.value}
                     checked={selectedFormat === format.value}
-                    onChange={(e) => {
+                    onChange={e => {
                       setSelectedFormat(e.target.value);
                       setError(null);
                     }}
@@ -155,10 +160,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           {isExporting && (
             <div className="export-progress">
               <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${exportProgress}%` }}
-                />
+                <div className="progress-fill" style={{ width: `${exportProgress}%` }} />
               </div>
               <span className="progress-text">{exportProgress}%</span>
             </div>
@@ -180,11 +182,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
         </div>
 
         <div className="dialog-actions">
-          <button
-            className="cancel-button"
-            onClick={handleCancel}
-            disabled={isExporting}
-          >
+          <button className="cancel-button" onClick={handleCancel} disabled={isExporting}>
             Cancel
           </button>
           <button
@@ -199,4 +197,3 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     </div>
   );
 };
-

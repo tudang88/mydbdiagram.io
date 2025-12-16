@@ -123,7 +123,7 @@
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   margin: 0;
   cursor: pointer;
 }
@@ -164,4 +164,3 @@
 .save-button:hover {
   background: #0056b3;
 }
-

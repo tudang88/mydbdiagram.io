@@ -55,8 +55,7 @@ async function testApiClient(): Promise<void> {
   console.log('\n✅ All ApiClient tests passed!');
 }
 
-testApiClient().catch((error) => {
+testApiClient().catch(error => {
   console.error('\n❌ Test failed:', error);
   process.exit(1);
 });
-

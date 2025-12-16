@@ -1,7 +1,7 @@
 /**
  * Test script for Backend API endpoints
  * Run with: npx tsx src/server/__tests__/test-backend-api.ts
- * 
+ *
  * Prerequisites: Backend server must be running on port 3000
  * Start server: npm run dev:server
  */
@@ -263,8 +263,8 @@ async function runTests(): Promise<void> {
 
   // Print summary
   console.log('\n📊 Test Summary:');
-  const passed = results.filter((r) => r.passed).length;
-  const failed = results.filter((r) => !r.passed).length;
+  const passed = results.filter(r => r.passed).length;
+  const failed = results.filter(r => !r.passed).length;
   console.log(`   Total: ${results.length}`);
   console.log(`   ✅ Passed: ${passed}`);
   console.log(`   ❌ Failed: ${failed}`);
@@ -272,8 +272,8 @@ async function runTests(): Promise<void> {
   if (failed > 0) {
     console.log('\n❌ Failed Tests:');
     results
-      .filter((r) => !r.passed)
-      .forEach((r) => {
+      .filter(r => !r.passed)
+      .forEach(r => {
         console.log(`   - ${r.name}: ${r.error}`);
       });
     process.exit(1);
@@ -283,8 +283,7 @@ async function runTests(): Promise<void> {
 }
 
 // Run tests
-runTests().catch((error) => {
+runTests().catch(error => {
   console.error('❌ Test execution failed:', error);
   process.exit(1);
 });
-

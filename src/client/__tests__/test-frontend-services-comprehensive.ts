@@ -1,7 +1,7 @@
 /**
  * Comprehensive unit tests for Frontend Services
  * Run with: npx tsx src/client/__tests__/test-frontend-services-comprehensive.ts
- * 
+ *
  * This test suite consolidates and extends frontend service tests
  */
 
@@ -259,4 +259,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

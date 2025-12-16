@@ -46,4 +46,3 @@ export function getExpandedViewport(viewport: Viewport, padding: number = 200): 
     height: viewport.height + padding * 2 * viewport.zoom,
   };
 }
-

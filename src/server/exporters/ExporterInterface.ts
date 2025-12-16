@@ -32,4 +32,3 @@ export interface Exporter {
    */
   getFormat(): string;
 }
-

@@ -69,8 +69,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
       const validation = parser.validate(text);
       if (!validation.isValid) {
         setError(
-          validation.errors?.map((e) => `${e.field}: ${e.message}`).join('\n') ||
-            'Validation failed'
+          validation.errors?.map(e => `${e.field}: ${e.message}`).join('\n') || 'Validation failed'
         );
       } else {
         setError(null);
@@ -100,9 +99,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
 
       const result = parser.parse(text);
       if (!result.success || !result.data) {
-        setError(
-          result.errors?.map((e) => e.message).join('\n') || 'Failed to parse input'
-        );
+        setError(result.errors?.map(e => e.message).join('\n') || 'Failed to parse input');
         setIsValidating(false);
         return;
       }
@@ -128,7 +125,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
 
   return (
     <div className="import-dialog-overlay" onClick={handleCancel}>
-      <div className="import-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="import-dialog" onClick={e => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Import Diagram</h2>
           <button className="close-button" onClick={handleCancel}>
@@ -168,7 +165,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
                 <textarea
                   id="sql-input"
                   value={sqlText}
-                  onChange={(e) => {
+                  onChange={e => {
                     setSqlText(e.target.value);
                     setError(null);
                   }}
@@ -185,7 +182,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
                 <textarea
                   id="json-input"
                   value={jsonText}
-                  onChange={(e) => {
+                  onChange={e => {
                     setJsonText(e.target.value);
                     setError(null);
                   }}
@@ -229,7 +226,9 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
           <button
             className="import-button"
             onClick={handleImport}
-            disabled={isValidating || (mode === 'sql' && !sqlText) || (mode === 'json' && !jsonText)}
+            disabled={
+              isValidating || (mode === 'sql' && !sqlText) || (mode === 'json' && !jsonText)
+            }
           >
             {isValidating ? 'Importing...' : 'Import'}
           </button>
@@ -238,4 +237,3 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
     </div>
   );
 };
-

@@ -15,12 +15,7 @@ interface ContextMenuProps {
   onClose: () => void;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({
-  isOpen,
-  position,
-  items,
-  onClose,
-}) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, items, onClose }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,4 +81,3 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     </div>
   );
 };
-

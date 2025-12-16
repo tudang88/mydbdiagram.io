@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
     };
     console.error('Error caught by boundary:', JSON.stringify(errorDetails, null, 2));
-    
+
     // In production, you could send this to an error tracking service
     // Example: errorTrackingService.log(errorDetails);
   }
@@ -60,10 +60,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <button className="error-reset-button" onClick={this.handleReset}>
                 Try Again
               </button>
-              <button
-                className="error-reload-button"
-                onClick={() => window.location.reload()}
-              >
+              <button className="error-reload-button" onClick={() => window.location.reload()}>
                 Reload Page
               </button>
             </div>
@@ -81,4 +78,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

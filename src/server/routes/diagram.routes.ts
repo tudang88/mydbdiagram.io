@@ -22,4 +22,3 @@ router.put('/:id', controller.update.bind(controller));
 router.delete('/:id', controller.delete.bind(controller));
 
 export default router;
-

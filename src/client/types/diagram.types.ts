@@ -23,4 +23,3 @@ export interface DiagramData {
   relationships: RelationshipData[];
   metadata: DiagramMetadata;
 }
-

@@ -1,7 +1,7 @@
 /**
  * Unit tests for Export Functionality
  * Run with: npx tsx src/client/__tests__/test-export-functionality.ts
- * 
+ *
  * Note: These tests verify export logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -33,20 +33,20 @@ async function testExportDialogLogic(): Promise<void> {
   if (supportedFormats.length !== 3) {
     throw new Error('Supported formats count incorrect');
   }
-  if (!supportedFormats.find((f) => f.value === 'json')) {
+  if (!supportedFormats.find(f => f.value === 'json')) {
     throw new Error('JSON format missing');
   }
-  if (!supportedFormats.find((f) => f.value === 'sql')) {
+  if (!supportedFormats.find(f => f.value === 'sql')) {
     throw new Error('SQL format missing');
   }
-  if (!supportedFormats.find((f) => f.value === 'svg')) {
+  if (!supportedFormats.find(f => f.value === 'svg')) {
     throw new Error('SVG format missing');
   }
   console.log('✅ Format selection working');
 
   // Test format validation
   const isValidFormat = (format: string): boolean => {
-    return supportedFormats.some((f) => f.value === format);
+    return supportedFormats.some(f => f.value === format);
   };
 
   if (!isValidFormat('json') || !isValidFormat('sql') || !isValidFormat('svg')) {
@@ -282,9 +282,9 @@ async function testExportFormats(): Promise<void> {
 
   // Test format-specific handling
   const formatHandlers: Record<string, (data: string) => string> = {
-    json: (data) => JSON.stringify(JSON.parse(data), null, 2),
-    sql: (data) => data,
-    svg: (data) => data,
+    json: data => JSON.stringify(JSON.parse(data), null, 2),
+    sql: data => data,
+    svg: data => data,
   };
 
   const testData = '{"test": "data"}';
@@ -313,4 +313,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

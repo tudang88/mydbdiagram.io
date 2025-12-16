@@ -30,11 +30,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
         </span>
         <span className="error-text">{formatMessage(message)}</span>
         {onDismiss && (
-          <button
-            className="error-dismiss-button"
-            onClick={onDismiss}
-            aria-label="Dismiss error"
-          >
+          <button className="error-dismiss-button" onClick={onDismiss} aria-label="Dismiss error">
             ×
           </button>
         )}
@@ -42,4 +38,3 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
     </div>
   );
 };
-

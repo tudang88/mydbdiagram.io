@@ -14,25 +14,20 @@ console.log('🧪 Testing Domain Models...\n');
 // Test 1: Create a Table
 console.log('Test 1: Creating a Table');
 try {
-  const table = new Table(
-    'table-1',
-    'Users',
-    { x: 100, y: 100 },
-    [
-      {
-        id: 'col-1',
-        name: 'id',
-        type: 'INTEGER',
-        constraints: [{ type: 'PRIMARY_KEY' }],
-      },
-      {
-        id: 'col-2',
-        name: 'name',
-        type: 'VARCHAR(255)',
-        constraints: [{ type: 'NOT_NULL' }],
-      },
-    ]
-  );
+  const table = new Table('table-1', 'Users', { x: 100, y: 100 }, [
+    {
+      id: 'col-1',
+      name: 'id',
+      type: 'INTEGER',
+      constraints: [{ type: 'PRIMARY_KEY' }],
+    },
+    {
+      id: 'col-2',
+      name: 'name',
+      type: 'VARCHAR(255)',
+      constraints: [{ type: 'NOT_NULL' }],
+    },
+  ]);
 
   console.log('✅ Table created:', table.getName());
   console.log('   Columns:', table.getAllColumns().length);
@@ -50,31 +45,26 @@ try {
 
   // Test 3: Add another table
   console.log('\nTest 3: Adding another Table');
-  const table2 = new Table(
-    'table-2',
-    'Posts',
-    { x: 300, y: 100 },
-    [
-      {
-        id: 'col-3',
-        name: 'id',
-        type: 'INTEGER',
-        constraints: [{ type: 'PRIMARY_KEY' }],
-      },
-      {
-        id: 'col-4',
-        name: 'user_id',
-        type: 'INTEGER',
-        constraints: [{ type: 'FOREIGN_KEY', value: 'Users.id' }],
-      },
-      {
-        id: 'col-5',
-        name: 'title',
-        type: 'VARCHAR(255)',
-        constraints: [{ type: 'NOT_NULL' }],
-      },
-    ]
-  );
+  const table2 = new Table('table-2', 'Posts', { x: 300, y: 100 }, [
+    {
+      id: 'col-3',
+      name: 'id',
+      type: 'INTEGER',
+      constraints: [{ type: 'PRIMARY_KEY' }],
+    },
+    {
+      id: 'col-4',
+      name: 'user_id',
+      type: 'INTEGER',
+      constraints: [{ type: 'FOREIGN_KEY', value: 'Users.id' }],
+    },
+    {
+      id: 'col-5',
+      name: 'title',
+      type: 'VARCHAR(255)',
+      constraints: [{ type: 'NOT_NULL' }],
+    },
+  ]);
 
   diagram.addTable(table2);
   console.log('✅ Added second table:', table2.getName());
@@ -104,7 +94,7 @@ try {
   console.log('✅ Validation result:', validation.isValid ? 'VALID' : 'INVALID');
   if (!validation.isValid && validation.errors) {
     console.log('   Errors:', validation.errors.length);
-    validation.errors.forEach((error) => {
+    validation.errors.forEach(error => {
       console.log(`   - ${error.field}: ${error.message}`);
     });
   }
@@ -125,7 +115,7 @@ try {
   const table3 = diagram2.getTable('table-1');
   if (table3) {
     console.log('✅ Retrieved table:', table3.getName());
-    
+
     // Add a column
     table3.addColumn({
       id: 'col-new',
@@ -161,4 +151,3 @@ try {
   }
   process.exit(1);
 }
-

@@ -73,7 +73,6 @@ export class UIStore {
    */
   private notifyObservers(): void {
     const currentState = this.getState();
-    this.observers.forEach((observer) => observer(currentState));
+    this.observers.forEach(observer => observer(currentState));
   }
 }
-

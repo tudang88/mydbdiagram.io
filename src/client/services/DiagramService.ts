@@ -113,7 +113,9 @@ export class DiagramService {
   /**
    * List all diagrams
    */
-  async listDiagrams(): Promise<ListResult<Array<{ id: string; name?: string; updatedAt?: string }>>> {
+  async listDiagrams(): Promise<
+    ListResult<Array<{ id: string; name?: string; updatedAt?: string }>>
+  > {
     const response = await this.apiClient.get<{ diagrams: DiagramData[] }>('/api/diagrams');
 
     if (!response.success) {
@@ -131,7 +133,7 @@ export class DiagramService {
     }
 
     // Transform to summary format
-    const summaries = response.data.diagrams.map((diagram) => ({
+    const summaries = response.data.diagrams.map(diagram => ({
       id: diagram.id,
       name: diagram.tables[0]?.name || 'Untitled',
       updatedAt: diagram.metadata.updatedAt,
@@ -161,4 +163,3 @@ export class DiagramService {
     };
   }
 }
-

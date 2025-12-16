@@ -47,20 +47,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       if (result.success) {
         alert('Diagram saved successfully!');
       } else {
-        alert(`Failed to save diagram: ${result.errors?.map((e) => e.message).join(', ')}`);
+        alert(`Failed to save diagram: ${result.errors?.map(e => e.message).join(', ')}`);
       }
     } catch (error) {
       alert(`Error saving diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
-
-
   const handleImport = (diagram: Diagram) => {
     diagramStore.setDiagram(diagram);
     onDiagramLoaded();
   };
-
 
   return (
     <div className="toolbar">
@@ -141,4 +138,3 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     </div>
   );
 };
-

@@ -54,7 +54,6 @@ export class DiagramStore {
    * Notify all observers
    */
   private notifyObservers(): void {
-    this.observers.forEach((observer) => observer(this.currentDiagram));
+    this.observers.forEach(observer => observer(this.currentDiagram));
   }
 }
-

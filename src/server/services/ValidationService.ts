@@ -33,7 +33,7 @@ export class ValidationService {
     } else {
       diagram.tables.forEach((table, index) => {
         const tableErrors = this.validateTable(table);
-        tableErrors.forEach((error) => {
+        tableErrors.forEach(error => {
           errors.push({
             field: `tables[${index}].${error.field}`,
             message: error.message,
@@ -48,7 +48,7 @@ export class ValidationService {
     } else if (diagram.relationships) {
       diagram.relationships.forEach((relationship, index) => {
         const relErrors = this.validateRelationship(relationship);
-        relErrors.forEach((error) => {
+        relErrors.forEach(error => {
           errors.push({
             field: `relationships[${index}].${error.field}`,
             message: error.message,
@@ -86,7 +86,11 @@ export class ValidationService {
       errors.push({ field: 'name', message: 'Table name is required' });
     }
 
-    if (!table.position || typeof table.position.x !== 'number' || typeof table.position.y !== 'number') {
+    if (
+      !table.position ||
+      typeof table.position.x !== 'number' ||
+      typeof table.position.y !== 'number'
+    ) {
       errors.push({ field: 'position', message: 'Table position is required' });
     }
 
@@ -123,4 +127,3 @@ export class ValidationService {
     return errors;
   }
 }
-

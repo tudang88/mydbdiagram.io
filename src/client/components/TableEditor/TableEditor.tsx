@@ -64,7 +64,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({ table, onSave, onCance
 
   return (
     <div className="table-editor-overlay" onClick={handleCancel}>
-      <div className="table-editor" onClick={(e) => e.stopPropagation()}>
+      <div className="table-editor" onClick={e => e.stopPropagation()}>
         <div className="editor-header">
           <h2>Edit Table</h2>
           <button className="close-button" onClick={handleCancel}>
@@ -79,15 +79,13 @@ export const TableEditor: React.FC<TableEditorProps> = ({ table, onSave, onCance
               id="table-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={errors.some((e) => e.field === 'name') ? 'error' : ''}
+              onChange={e => setName(e.target.value)}
+              className={errors.some(e => e.field === 'name') ? 'error' : ''}
               placeholder="Enter table name"
               autoFocus
             />
-            {errors.some((e) => e.field === 'name') && (
-              <span className="error-message">
-                {errors.find((e) => e.field === 'name')?.message}
-              </span>
+            {errors.some(e => e.field === 'name') && (
+              <span className="error-message">{errors.find(e => e.field === 'name')?.message}</span>
             )}
           </div>
 
@@ -97,7 +95,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({ table, onSave, onCance
               id="table-x"
               type="number"
               value={position.x}
-              onChange={(e) => setPosition({ ...position, x: parseInt(e.target.value) || 0 })}
+              onChange={e => setPosition({ ...position, x: parseInt(e.target.value) || 0 })}
               placeholder="X position"
             />
           </div>
@@ -108,7 +106,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({ table, onSave, onCance
               id="table-y"
               type="number"
               value={position.y}
-              onChange={(e) => setPosition({ ...position, y: parseInt(e.target.value) || 0 })}
+              onChange={e => setPosition({ ...position, y: parseInt(e.target.value) || 0 })}
               placeholder="Y position"
             />
           </div>
@@ -126,4 +124,3 @@ export const TableEditor: React.FC<TableEditorProps> = ({ table, onSave, onCance
     </div>
   );
 };
-

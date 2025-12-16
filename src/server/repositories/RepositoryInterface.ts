@@ -8,4 +8,3 @@ export interface Repository<T, TId = string> {
   update(id: TId, updates: Partial<T>): Promise<T | null>;
   delete(id: TId): Promise<boolean>;
 }
-

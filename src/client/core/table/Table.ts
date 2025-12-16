@@ -16,7 +16,7 @@ export class Table {
     private metadata?: TableType['metadata']
   ) {
     this.columns = new Map();
-    columns.forEach((column) => {
+    columns.forEach(column => {
       this.columns.set(column.id, column);
     });
   }
@@ -92,7 +92,7 @@ export class Table {
     }
 
     // Validate columns
-    this.columns.forEach((column) => {
+    this.columns.forEach(column => {
       if (!column.name || column.name.trim() === '') {
         errors.push({
           field: `column.${column.id}.name`,
@@ -128,4 +128,3 @@ export class Table {
     return new Table(data.id, data.name, data.position, data.columns, data.metadata);
   }
 }
-

@@ -46,7 +46,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
   // Subscribe to diagram changes
   useEffect(() => {
-    const unsubscribe = diagramStore.subscribe((currentDiagram) => {
+    const unsubscribe = diagramStore.subscribe(currentDiagram => {
       setDiagram(currentDiagram);
     });
     return unsubscribe;
@@ -54,7 +54,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
   // Subscribe to UI state changes
   useEffect(() => {
-    const unsubscribe = uiStore.subscribe((state) => {
+    const unsubscribe = uiStore.subscribe(state => {
       setUIState(state);
     });
     return unsubscribe;
@@ -342,7 +342,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onContextMenu={(e) => e.preventDefault()}
+      onContextMenu={e => e.preventDefault()}
     >
       {renderGrid()}
       <div
@@ -386,4 +386,3 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     </div>
   );
 };
-

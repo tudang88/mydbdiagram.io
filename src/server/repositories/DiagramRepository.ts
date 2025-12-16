@@ -88,4 +88,3 @@ export class DiagramRepository implements Repository<DiagramData> {
     return `${this.dataDirectory}/${id}.json`;
   }
 }
-

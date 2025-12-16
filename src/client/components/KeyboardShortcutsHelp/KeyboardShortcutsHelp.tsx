@@ -43,7 +43,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 
   return (
     <div className="keyboard-shortcuts-overlay" onClick={onClose}>
-      <div className="keyboard-shortcuts-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="keyboard-shortcuts-dialog" onClick={e => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Keyboard Shortcuts</h2>
           <button className="close-button" onClick={onClose}>
@@ -75,4 +75,3 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
     </div>
   );
 };
-

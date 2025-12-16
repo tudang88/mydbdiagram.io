@@ -10,7 +10,9 @@ export class DiagramService {
   /**
    * Create a new diagram
    */
-  async create(data: Omit<DiagramData, 'id' | 'metadata'> & { metadata?: Partial<DiagramData['metadata']> }): Promise<DiagramData> {
+  async create(
+    data: Omit<DiagramData, 'id' | 'metadata'> & { metadata?: Partial<DiagramData['metadata']> }
+  ): Promise<DiagramData> {
     const id = this.generateId();
     const now = new Date().toISOString();
 
@@ -62,4 +64,3 @@ export class DiagramService {
     return `diagram-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 }
-

@@ -1,7 +1,7 @@
 /**
  * Unit tests for UI Integration
  * Run with: npx tsx src/client/__tests__/test-ui-integration.ts
- * 
+ *
  * Note: These tests verify component integration and data flow,
  * not React rendering (which would require React Testing Library)
  */
@@ -372,4 +372,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

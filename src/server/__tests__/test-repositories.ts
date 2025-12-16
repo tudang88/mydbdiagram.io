@@ -29,7 +29,7 @@ async function testFileRepository(): Promise<void> {
   const testData = { id: 'test-1', name: 'Test' };
   await fileRepo.writeJSON('test.json', testData);
   const readData = await fileRepo.readJSON<typeof testData>('test.json');
-  
+
   if (!readData || readData.id !== 'test-1') {
     throw new Error('FileRepository readJSON failed');
   }
@@ -103,7 +103,7 @@ async function testDiagramRepository(): Promise<void> {
 
   // Test findAll
   const all = await diagramRepo.findAll();
-  if (all.length === 0 || !all.find((d) => d.id === 'diagram-test-1')) {
+  if (all.length === 0 || !all.find(d => d.id === 'diagram-test-1')) {
     throw new Error('DiagramRepository findAll failed');
   }
   console.log('✅ findAll working');
@@ -155,4 +155,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

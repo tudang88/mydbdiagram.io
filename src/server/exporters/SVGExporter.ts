@@ -55,7 +55,7 @@ export class SVGExporter implements Exporter {
     let maxX = -Infinity;
     let maxY = -Infinity;
 
-    diagram.tables.forEach((table) => {
+    diagram.tables.forEach(table => {
       const x = table.position.x;
       const y = table.position.y;
       const height = tableHeaderHeight + table.columns.length * rowHeight;
@@ -70,15 +70,13 @@ export class SVGExporter implements Exporter {
 
     const svg: string[] = [];
     svg.push('<?xml version="1.0" encoding="UTF-8"?>');
-    svg.push(
-      `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`
-    );
+    svg.push(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`);
     svg.push(`<rect width="${width}" height="${height}" fill="white"/>`);
 
     // Draw relationships (lines)
-    diagram.relationships.forEach((relationship) => {
-      const fromTable = diagram.tables.find((t) => t.id === relationship.fromTableId);
-      const toTable = diagram.tables.find((t) => t.id === relationship.toTableId);
+    diagram.relationships.forEach(relationship => {
+      const fromTable = diagram.tables.find(t => t.id === relationship.fromTableId);
+      const toTable = diagram.tables.find(t => t.id === relationship.toTableId);
 
       if (fromTable && toTable) {
         const x1 = fromTable.position.x + tableWidth / 2 - minX + padding;
@@ -98,7 +96,7 @@ export class SVGExporter implements Exporter {
     );
 
     // Draw tables
-    diagram.tables.forEach((table) => {
+    diagram.tables.forEach(table => {
       const x = table.position.x - minX + padding;
       const y = table.position.y - minY + padding;
       const tableHeight = tableHeaderHeight + table.columns.length * rowHeight;
@@ -147,4 +145,3 @@ export class SVGExporter implements Exporter {
       .replace(/'/g, '&apos;');
   }
 }
-

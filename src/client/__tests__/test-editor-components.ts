@@ -1,7 +1,7 @@
 /**
  * Unit tests for Editor Components
  * Run with: npx tsx src/client/__tests__/test-editor-components.ts
- * 
+ *
  * Note: These tests verify component logic and data handling,
  * not React rendering (which would require React Testing Library)
  */
@@ -124,7 +124,7 @@ async function testColumnEditorLogic(): Promise<void> {
   // Test constraint toggle logic
   const constraints: Array<{ type: ConstraintType; value?: string }> = [];
   const toggleConstraint = (type: ConstraintType) => {
-    const existing = constraints.find((c) => c.type === type);
+    const existing = constraints.find(c => c.type === type);
     if (existing) {
       const index = constraints.indexOf(existing);
       constraints.splice(index, 1);
@@ -158,7 +158,7 @@ async function testColumnEditorLogic(): Promise<void> {
 
   // Test foreign key constraint with value
   toggleConstraint('FOREIGN_KEY');
-  const fkConstraint = constraints.find((c) => c.type === 'FOREIGN_KEY');
+  const fkConstraint = constraints.find(c => c.type === 'FOREIGN_KEY');
   if (!fkConstraint) {
     throw new Error('Foreign key constraint not found');
   }
@@ -309,4 +309,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

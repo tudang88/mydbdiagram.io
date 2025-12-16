@@ -24,7 +24,9 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
   const [selectedFromColumn, setSelectedFromColumn] = useState<string>('');
   const [selectedToTable, setSelectedToTable] = useState<string>(toTableId || '');
   const [selectedToColumn, setSelectedToColumn] = useState<string>('');
-  const [relationshipType, setRelationshipType] = useState<'ONE_TO_ONE' | 'ONE_TO_MANY' | 'MANY_TO_MANY'>('ONE_TO_MANY');
+  const [relationshipType, setRelationshipType] = useState<
+    'ONE_TO_ONE' | 'ONE_TO_MANY' | 'MANY_TO_MANY'
+  >('ONE_TO_MANY');
   const [isOptional, setIsOptional] = useState(false);
   const [errors, setErrors] = useState<Array<{ field: string; message: string }>>([]);
 
@@ -86,7 +88,12 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
       onClose();
       resetForm();
     } catch (err) {
-      setErrors([{ field: 'general', message: err instanceof Error ? err.message : 'Failed to create relationship' }]);
+      setErrors([
+        {
+          field: 'general',
+          message: err instanceof Error ? err.message : 'Failed to create relationship',
+        },
+      ]);
     }
   };
 
@@ -111,7 +118,7 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
 
   return (
     <div className="relationship-creator-overlay" onClick={handleCancel}>
-      <div className="relationship-creator" onClick={(e) => e.stopPropagation()}>
+      <div className="relationship-creator" onClick={e => e.stopPropagation()}>
         <div className="dialog-header">
           <h2>Create Relationship</h2>
           <button className="close-button" onClick={handleCancel}>
@@ -125,23 +132,23 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
             <select
               id="from-table"
               value={selectedFromTable}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedFromTable(e.target.value);
                 setSelectedFromColumn('');
                 setErrors([]);
               }}
-              className={errors.some((e) => e.field === 'fromTable') ? 'error' : ''}
+              className={errors.some(e => e.field === 'fromTable') ? 'error' : ''}
             >
               <option value="">Select table...</option>
-              {tables.map((table) => (
+              {tables.map(table => (
                 <option key={table.getId()} value={table.getId()}>
                   {table.getName()}
                 </option>
               ))}
             </select>
-            {errors.some((e) => e.field === 'fromTable') && (
+            {errors.some(e => e.field === 'fromTable') && (
               <span className="error-message">
-                {errors.find((e) => e.field === 'fromTable')?.message}
+                {errors.find(e => e.field === 'fromTable')?.message}
               </span>
             )}
           </div>
@@ -151,23 +158,23 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
             <select
               id="from-column"
               value={selectedFromColumn}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedFromColumn(e.target.value);
                 setErrors([]);
               }}
               disabled={!fromTable}
-              className={errors.some((e) => e.field === 'fromColumn') ? 'error' : ''}
+              className={errors.some(e => e.field === 'fromColumn') ? 'error' : ''}
             >
               <option value="">Select column...</option>
-              {fromTable?.getAllColumns().map((column) => (
+              {fromTable?.getAllColumns().map(column => (
                 <option key={column.id} value={column.id}>
                   {column.name} ({column.type})
                 </option>
               ))}
             </select>
-            {errors.some((e) => e.field === 'fromColumn') && (
+            {errors.some(e => e.field === 'fromColumn') && (
               <span className="error-message">
-                {errors.find((e) => e.field === 'fromColumn')?.message}
+                {errors.find(e => e.field === 'fromColumn')?.message}
               </span>
             )}
           </div>
@@ -177,25 +184,25 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
             <select
               id="to-table"
               value={selectedToTable}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedToTable(e.target.value);
                 setSelectedToColumn('');
                 setErrors([]);
               }}
-              className={errors.some((e) => e.field === 'toTable') ? 'error' : ''}
+              className={errors.some(e => e.field === 'toTable') ? 'error' : ''}
             >
               <option value="">Select table...</option>
               {tables
-                .filter((table) => table.getId() !== selectedFromTable)
-                .map((table) => (
+                .filter(table => table.getId() !== selectedFromTable)
+                .map(table => (
                   <option key={table.getId()} value={table.getId()}>
                     {table.getName()}
                   </option>
                 ))}
             </select>
-            {errors.some((e) => e.field === 'toTable') && (
+            {errors.some(e => e.field === 'toTable') && (
               <span className="error-message">
-                {errors.find((e) => e.field === 'toTable')?.message}
+                {errors.find(e => e.field === 'toTable')?.message}
               </span>
             )}
           </div>
@@ -205,23 +212,23 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
             <select
               id="to-column"
               value={selectedToColumn}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedToColumn(e.target.value);
                 setErrors([]);
               }}
               disabled={!toTable}
-              className={errors.some((e) => e.field === 'toColumn') ? 'error' : ''}
+              className={errors.some(e => e.field === 'toColumn') ? 'error' : ''}
             >
               <option value="">Select column...</option>
-              {toTable?.getAllColumns().map((column) => (
+              {toTable?.getAllColumns().map(column => (
                 <option key={column.id} value={column.id}>
                   {column.name} ({column.type})
                 </option>
               ))}
             </select>
-            {errors.some((e) => e.field === 'toColumn') && (
+            {errors.some(e => e.field === 'toColumn') && (
               <span className="error-message">
-                {errors.find((e) => e.field === 'toColumn')?.message}
+                {errors.find(e => e.field === 'toColumn')?.message}
               </span>
             )}
           </div>
@@ -231,7 +238,7 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
             <select
               id="relationship-type"
               value={relationshipType}
-              onChange={(e) => setRelationshipType(e.target.value as typeof relationshipType)}
+              onChange={e => setRelationshipType(e.target.value as typeof relationshipType)}
             >
               <option value="ONE_TO_ONE">One-to-One (1:1)</option>
               <option value="ONE_TO_MANY">One-to-Many (1:N)</option>
@@ -244,15 +251,15 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
               <input
                 type="checkbox"
                 checked={isOptional}
-                onChange={(e) => setIsOptional(e.target.checked)}
+                onChange={e => setIsOptional(e.target.checked)}
               />
               <span>Optional relationship</span>
             </label>
           </div>
 
-          {errors.some((e) => e.field === 'tables' || e.field === 'general') && (
+          {errors.some(e => e.field === 'tables' || e.field === 'general') && (
             <div className="error-message-general">
-              {errors.find((e) => e.field === 'tables' || e.field === 'general')?.message}
+              {errors.find(e => e.field === 'tables' || e.field === 'general')?.message}
             </div>
           )}
         </div>
@@ -269,4 +276,3 @@ export const RelationshipCreator: React.FC<RelationshipCreatorProps> = ({
     </div>
   );
 };
-

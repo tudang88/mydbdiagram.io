@@ -25,4 +25,3 @@ export interface RelationshipData {
   optional: boolean;
   metadata?: RelationshipMetadata;
 }
-

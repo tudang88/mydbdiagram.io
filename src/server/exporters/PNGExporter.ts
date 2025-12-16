@@ -220,4 +220,3 @@ export class PNGExporter implements Exporter {
   }
   */
 }
-

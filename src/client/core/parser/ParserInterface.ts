@@ -38,4 +38,3 @@ export interface Parser<TInput, TOutput = Diagram> {
    */
   canParse(input: unknown): boolean;
 }
-

@@ -62,13 +62,13 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
       </div>
       <div className="table-body">
         <div className="table-columns">
-          {columns.map((column) => (
+          {columns.map(column => (
             <div key={column.id} className="table-column">
               <span className="column-name">{column.name}</span>
               <span className="column-type">{column.type}</span>
               {column.constraints.length > 0 && (
                 <span className="column-constraints">
-                  {column.constraints.map((c) => {
+                  {column.constraints.map(c => {
                     if (c.type === 'PRIMARY_KEY') return '🔑';
                     if (c.type === 'FOREIGN_KEY') return '🔗';
                     if (c.type === 'NOT_NULL') return '!';
@@ -97,4 +97,3 @@ export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
     prevProps.table.getAllColumns().length === nextProps.table.getAllColumns().length
   );
 });
-

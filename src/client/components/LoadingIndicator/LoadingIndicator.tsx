@@ -16,4 +16,3 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
     </div>
   );
 };
-

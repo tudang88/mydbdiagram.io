@@ -105,7 +105,7 @@ async function testSQLParser(): Promise<void> {
     throw new Error('SQLParser should parse multiple tables');
   }
 
-  const usersTable = tables.find((t) => t.getName() === 'Users');
+  const usersTable = tables.find(t => t.getName() === 'Users');
   if (!usersTable) {
     throw new Error('SQLParser failed to parse Users table');
   }
@@ -115,7 +115,7 @@ async function testSQLParser(): Promise<void> {
     throw new Error('SQLParser failed to parse all columns');
   }
 
-  const idColumn = columns.find((c) => c.name === 'id');
+  const idColumn = columns.find(c => c.name === 'id');
   if (!idColumn) {
     throw new Error('SQLParser failed to parse id column');
   }
@@ -177,4 +177,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

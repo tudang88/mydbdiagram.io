@@ -37,4 +37,3 @@ export interface TableData {
   columns: ColumnData[];
   metadata?: TableMetadata;
 }
-

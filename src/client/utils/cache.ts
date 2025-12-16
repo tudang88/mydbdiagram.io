@@ -93,4 +93,3 @@ export const apiCache = new Cache<unknown>(5 * 60 * 1000); // 5 minutes
  * Global cache instance for computed values
  */
 export const computationCache = new Cache<unknown>(10 * 60 * 1000); // 10 minutes
-

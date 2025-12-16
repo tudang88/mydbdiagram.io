@@ -1,7 +1,7 @@
 /**
  * Unit tests for Toolbar Component
  * Run with: npx tsx src/client/__tests__/test-toolbar.ts
- * 
+ *
  * Note: These tests verify component logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -284,4 +284,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

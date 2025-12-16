@@ -18,10 +18,10 @@ export const logger = (req: Request, res: Response, next: NextFunction): void =>
       res.statusCode >= 500
         ? '\x1b[31m' // Red
         : res.statusCode >= 400
-        ? '\x1b[33m' // Yellow
-        : res.statusCode >= 300
-        ? '\x1b[36m' // Cyan
-        : '\x1b[32m'; // Green
+          ? '\x1b[33m' // Yellow
+          : res.statusCode >= 300
+            ? '\x1b[36m' // Cyan
+            : '\x1b[32m'; // Green
 
     const resetColor = '\x1b[0m';
     console.log(

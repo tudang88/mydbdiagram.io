@@ -1,7 +1,7 @@
 /**
  * Unit tests for Canvas Interactions
  * Run with: npx tsx src/client/__tests__/test-canvas-interactions.ts
- * 
+ *
  * Note: These tests verify interaction logic and integration,
  * not React rendering (which would require React Testing Library)
  */
@@ -82,7 +82,11 @@ async function testTableDragging(): Promise<void> {
   console.log('✅ Table movement working');
 
   // Test drag delta calculation
-  const calculateDragDelta = (startPos: { x: number; y: number }, currentPos: { x: number; y: number }, zoom: number) => {
+  const calculateDragDelta = (
+    startPos: { x: number; y: number },
+    currentPos: { x: number; y: number },
+    zoom: number
+  ) => {
     return {
       x: (currentPos.x - startPos.x) / zoom,
       y: (currentPos.y - startPos.y) / zoom,
@@ -93,13 +97,16 @@ async function testTableDragging(): Promise<void> {
   const currentPos = { x: 200, y: 150 };
   const zoom = 1.5;
   const delta = calculateDragDelta(startPos, currentPos, zoom);
-  if (delta.x !== (100 / 1.5) || delta.y !== (50 / 1.5)) {
+  if (delta.x !== 100 / 1.5 || delta.y !== 50 / 1.5) {
     throw new Error('Drag delta calculation failed');
   }
   console.log('✅ Drag delta calculation working');
 
   // Test zoom-aware dragging
-  const applyDragDelta = (currentPos: { x: number; y: number }, delta: { x: number; y: number }) => {
+  const applyDragDelta = (
+    currentPos: { x: number; y: number },
+    delta: { x: number; y: number }
+  ) => {
     return {
       x: currentPos.x + delta.x,
       y: currentPos.y + delta.y,
@@ -199,7 +206,7 @@ async function testContextMenuLogic(): Promise<void> {
   console.log('✅ Context menu items structure correct');
 
   // Test divider item
-  const dividerItem = tableMenuItems.find((item) => item.divider);
+  const dividerItem = tableMenuItems.find(item => item.divider);
   if (!dividerItem || !dividerItem.divider) {
     throw new Error('Divider item not found');
   }
@@ -433,4 +440,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

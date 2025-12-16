@@ -21,4 +21,3 @@ router.post('/:id/export', controller.export.bind(controller));
 router.get('/formats', controller.getFormats.bind(controller));
 
 export default router;
-

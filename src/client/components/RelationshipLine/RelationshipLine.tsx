@@ -67,10 +67,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
           refY={arrowSize / 2}
           orient="auto-start-reverse"
         >
-          <polygon
-            points={`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`}
-            fill="#666"
-          />
+          <polygon points={`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`} fill="#666" />
         </marker>
       </defs>
       <line
@@ -112,4 +109,3 @@ export const RelationshipLine = memo(RelationshipLineComponent, (prevProps, next
     prevProps.relationship.getType() === nextProps.relationship.getType()
   );
 });
-

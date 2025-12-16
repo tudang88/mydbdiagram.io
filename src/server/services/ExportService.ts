@@ -14,11 +14,7 @@ export class ExportService {
   /**
    * Export diagram in specified format
    */
-  async export(
-    diagramId: string,
-    format: string,
-    options?: ExportOptions
-  ): Promise<ExportResult> {
+  async export(diagramId: string, format: string, options?: ExportOptions): Promise<ExportResult> {
     // Get diagram
     const diagram = await this.diagramService.findById(diagramId);
     if (!diagram) {
@@ -48,4 +44,3 @@ export class ExportService {
     return this.exporterFactory.getSupportedFormats();
   }
 }
-

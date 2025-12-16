@@ -115,7 +115,14 @@ export class SQLParser implements Parser<string, Diagram> {
         }
       }
       // Column definition
-      else if (currentTable && line && !upperLine.startsWith('PRIMARY KEY') && !upperLine.startsWith('FOREIGN KEY') && !upperLine.startsWith('CONSTRAINT') && !line.startsWith(')')) {
+      else if (
+        currentTable &&
+        line &&
+        !upperLine.startsWith('PRIMARY KEY') &&
+        !upperLine.startsWith('FOREIGN KEY') &&
+        !upperLine.startsWith('CONSTRAINT') &&
+        !line.startsWith(')')
+      ) {
         const columnMatch = line.match(/[`"]?(\w+)[`"]?\s+(\w+(?:\([^)]+\))?)/i);
         if (columnMatch) {
           columnIdCounter++;
@@ -174,4 +181,3 @@ export class SQLParser implements Parser<string, Diagram> {
     };
   }
 }
-

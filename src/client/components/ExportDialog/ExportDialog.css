@@ -99,16 +99,16 @@
   background: #f8f9fa;
 }
 
-.format-option input[type="radio"] {
+.format-option input[type='radio'] {
   margin: 0;
   cursor: pointer;
 }
 
-.format-option input[type="radio"]:checked + .format-info {
+.format-option input[type='radio']:checked + .format-info {
   color: #007bff;
 }
 
-.format-option input[type="radio"]:disabled {
+.format-option input[type='radio']:disabled {
   cursor: not-allowed;
 }
 
@@ -237,4 +237,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-

@@ -34,7 +34,7 @@ async function testDiagramStore(): Promise<void> {
 
   // Test subscribe
   let notified = false;
-  const unsubscribe = store.subscribe((diagram) => {
+  const unsubscribe = store.subscribe(diagram => {
     if (diagram && diagram.getId() === 'diagram-1') {
       notified = true;
     }
@@ -51,7 +51,7 @@ async function testDiagramStore(): Promise<void> {
   store.setDiagram(newDiagram);
 
   // Give a moment for async notification (if any)
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise(resolve => setTimeout(resolve, 10));
 
   if (!notified) {
     // Check if diagram was updated
@@ -107,7 +107,7 @@ async function testUIStore(): Promise<void> {
 
   // Test subscribe
   let notified = false;
-  const unsubscribe = store.subscribe((state) => {
+  const unsubscribe = store.subscribe(state => {
     if (state.zoomLevel === 2) {
       notified = true;
     }
@@ -123,7 +123,7 @@ async function testUIStore(): Promise<void> {
   store.setState({ zoomLevel: 2.5 });
 
   // Give a moment for async notification (if any)
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise(resolve => setTimeout(resolve, 10));
 
   const currentState = store.getState();
   if (currentState.zoomLevel === 2.5) {
@@ -158,4 +158,3 @@ async function runTests(): Promise<void> {
 }
 
 runTests();
-

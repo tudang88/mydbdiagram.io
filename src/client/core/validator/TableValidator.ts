@@ -49,7 +49,7 @@ export class TableValidator {
     }
 
     // Validate each column
-    columns.forEach((column) => {
+    columns.forEach(column => {
       if (!column.name || column.name.trim() === '') {
         errors.push({
           field: `column.${column.id}.name`,
@@ -65,10 +65,8 @@ export class TableValidator {
     });
 
     // Check for duplicate column names
-    const columnNames = columns.map((col) => col.name.toLowerCase());
-    const duplicateNames = columnNames.filter(
-      (name, index) => columnNames.indexOf(name) !== index
-    );
+    const columnNames = columns.map(col => col.name.toLowerCase());
+    const duplicateNames = columnNames.filter((name, index) => columnNames.indexOf(name) !== index);
     if (duplicateNames.length > 0) {
       errors.push({
         field: 'columns',
@@ -88,4 +86,3 @@ export class TableValidator {
     };
   }
 }
-

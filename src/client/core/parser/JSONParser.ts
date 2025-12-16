@@ -38,7 +38,7 @@ export class JSONParser implements Parser<string, Diagram> {
   validate(input: string): ValidationResult {
     try {
       const data = JSON.parse(input);
-      
+
       // Basic validation
       if (!data || typeof data !== 'object') {
         return {
@@ -86,4 +86,3 @@ export class JSONParser implements Parser<string, Diagram> {
     }
   }
 }
-

@@ -41,10 +41,10 @@ export class DiagramValidator {
     }
 
     // Validate each table
-    tables.forEach((table) => {
+    tables.forEach(table => {
       const tableValidation = table.validate();
       if (!tableValidation.isValid && tableValidation.errors) {
-        tableValidation.errors.forEach((error) => {
+        tableValidation.errors.forEach(error => {
           errors.push({
             field: `table.${table.getId()}.${error.field}`,
             message: error.message,
@@ -55,10 +55,10 @@ export class DiagramValidator {
 
     // Validate relationships
     const relationships = diagram.getAllRelationships();
-    relationships.forEach((relationship) => {
+    relationships.forEach(relationship => {
       const relationshipValidation = relationship.validate(diagram);
       if (!relationshipValidation.isValid && relationshipValidation.errors) {
-        relationshipValidation.errors.forEach((error) => {
+        relationshipValidation.errors.forEach(error => {
           errors.push({
             field: `relationship.${relationship.getId()}.${error.field}`,
             message: error.message,
@@ -79,4 +79,3 @@ export class DiagramValidator {
     };
   }
 }
-
