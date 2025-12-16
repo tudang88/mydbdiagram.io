@@ -1,6 +1,5 @@
 import { Exporter, ExportResult, ExportOptions } from './ExporterInterface';
 import { DiagramData } from '../../client/types/diagram.types';
-import { FileRepository } from '../repositories/FileRepository';
 import { join } from 'path';
 import { promises as fs } from 'fs';
 
@@ -9,7 +8,7 @@ import { promises as fs } from 'fs';
  * Exports diagram as SQL DDL statements
  */
 export class SQLExporter implements Exporter {
-  constructor(private fileRepository: FileRepository) {}
+  constructor() {}
 
   getFormat(): string {
     return 'sql';
