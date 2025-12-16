@@ -1,6 +1,8 @@
 import { Exporter } from './ExporterInterface';
 import { JSONExporter } from './JSONExporter';
 import { SQLExporter } from './SQLExporter';
+import { SVGExporter } from './SVGExporter';
+import { PNGExporter } from './PNGExporter';
 import { FileRepository } from '../repositories/FileRepository';
 
 /**
@@ -13,6 +15,8 @@ export class ExporterFactory {
     // Register default exporters
     this.register('json', new JSONExporter(fileRepository));
     this.register('sql', new SQLExporter());
+    this.register('svg', new SVGExporter());
+    this.register('png', new PNGExporter());
   }
 
   /**
