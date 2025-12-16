@@ -29,6 +29,13 @@ export class Table {
     return this.name;
   }
 
+  updateName(newName: string): void {
+    if (!newName.trim()) {
+      throw new Error('Table name cannot be empty');
+    }
+    this.name = newName.trim();
+  }
+
   setName(name: string): void {
     if (!name || name.trim() === '') {
       throw new Error('Table name cannot be empty');
