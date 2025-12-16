@@ -3,8 +3,8 @@ import { DiagramData } from '../../client/types/diagram.types';
 // Note: canvas library requires native dependencies
 // For now, PNG export is a placeholder - can be implemented when canvas is properly installed
 // import { createCanvas } from 'canvas';
-import { join } from 'path';
-import { promises as fs } from 'fs';
+// import { join } from 'path';
+// import { promises as fs } from 'fs';
 
 /**
  * PNG Exporter
@@ -55,12 +55,8 @@ export class PNGExporter implements Exporter {
    * Render diagram to canvas
    * TODO: Implement when canvas library is available
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private async renderDiagram(_diagram: DiagramData): Promise<any> {
-    // Placeholder implementation
-    throw new Error('PNG export not yet implemented');
-    
-    /* Implementation when canvas is available:
+  /*
+  private async renderDiagram(diagram: DiagramData): Promise<any> {
     const padding = 50;
     const tableWidth = 200;
     const tableHeaderHeight = 30;
@@ -182,14 +178,8 @@ export class PNGExporter implements Exporter {
     });
 
     return canvas;
-    */
   }
 
-  /**
-   * Draw rounded rectangle
-   * TODO: Implement when canvas library is available
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private roundRect(
     ctx: any,
     x: number,
@@ -228,5 +218,6 @@ export class PNGExporter implements Exporter {
     }
     ctx.closePath();
   }
+  */
 }
 
