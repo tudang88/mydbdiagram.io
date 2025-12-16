@@ -5,6 +5,7 @@ import { DiagramStore } from '../../state/store/diagramStore';
 import { Diagram } from '../../core/diagram/Diagram';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
 import { ExportDialog } from '../ExportDialog/ExportDialog';
+import { LoadDialog } from '../LoadDialog/LoadDialog';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -24,6 +25,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
 
   const handleNew = () => {
     const newDiagram = Diagram.create(`diagram-${Date.now()}`);
@@ -50,24 +52,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
-  const handleLoad = async () => {
-    // For now, we'll use a simple prompt. In a full implementation, this would show a list of saved diagrams
-    const diagramId = prompt('Enter diagram ID to load:');
-    if (!diagramId) return;
-
-    try {
-      const result = await diagramService.loadDiagram(diagramId);
-      if (result.success && result.data) {
-        diagramStore.setDiagram(result.data);
-        onDiagramLoaded();
-        alert('Diagram loaded successfully!');
-      } else {
-        alert(`Failed to load diagram: ${result.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      alert(`Error loading diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
 
   const handleImport = (diagram: Diagram) => {
@@ -85,7 +69,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button className="toolbar-button" onClick={handleSave} title="Save Diagram">
           Save
         </button>
-        <button className="toolbar-button" onClick={handleLoad} title="Load Diagram">
+        <button
+          className="toolbar-button"
+          onClick={() => {
+            setShowExportDialog(false);
+            setShowImportDialog(false);
+            setShowLoadDialog(true);
+          }}
+          title="Load Diagram"
+        >
           Load
         </button>
       </div>
@@ -122,6 +114,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         isOpen={showExportDialog}
         onClose={() => setShowExportDialog(false)}
         exportService={exportService}
+        diagramStore={diagramStore}
+      />
+      <LoadDialog
+        isOpen={showLoadDialog}
+        onClose={() => setShowLoadDialog(false)}
+        onLoad={onDiagramLoaded}
+        diagramService={diagramService}
         diagramStore={diagramStore}
       />
     </div>
