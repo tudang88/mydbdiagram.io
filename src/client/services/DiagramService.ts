@@ -2,7 +2,6 @@ import { ApiClient } from './ApiClient';
 import { DiagramData } from '../types/diagram.types';
 import { DiagramValidator } from '../core/validator/DiagramValidator';
 import { Diagram } from '../core/diagram/Diagram';
-import { debounce } from '../utils/debounce';
 
 /**
  * Service for Diagram operations

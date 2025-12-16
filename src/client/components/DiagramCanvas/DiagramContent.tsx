@@ -1,4 +1,4 @@
-import React, { useMemo, memo, useEffect, useState } from 'react';
+import React, { useMemo, memo } from 'react';
 import { Diagram } from '../../core/diagram/Diagram';
 import { TableNode } from '../TableNode/TableNode';
 import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
