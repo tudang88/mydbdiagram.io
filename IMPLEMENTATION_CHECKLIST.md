@@ -63,11 +63,11 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement Relationship domain model"
 
 ### 2.5 Validators
-- [ ] Implement DiagramValidator class
-- [ ] Implement TableValidator class
-- [ ] Implement RelationshipValidator class
-- [ ] Add validation rules for all entities
-- [ ] Commit: "feat: implement domain validators"
+- [x] Implement DiagramValidator class
+- [x] Implement TableValidator class
+- [x] Implement RelationshipValidator class
+- [x] Add validation rules for all entities
+- [x] Commit: "feat: implement domain validators"
 
 ## Phase 3: Backend Implementation
 
