@@ -215,6 +215,31 @@ npx tsx src/server/__tests__/test-backend-api.ts  # In another terminal
 5. **Documentation**: Update design documents when making logic changes
 6. **Code Style**: Follow ESLint and Prettier rules
 
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### Workflows
+
+- **CI Workflow** (`.github/workflows/ci.yml`): Runs on every push and pull request
+  - Type checking
+  - Linting
+  - Format checking
+  - Building
+  - Unit and integration tests
+
+- **Build Workflow** (`.github/workflows/build.yml`): Runs on main branch pushes and tags
+  - Full build process
+  - Artifact upload
+
+### Status Badge
+
+Add this to your README to show CI status:
+
+```markdown
+![CI](https://github.com/yourusername/mydbdiagramio/workflows/CI/badge.svg)
+```
+
 ## License
 
 MIT
