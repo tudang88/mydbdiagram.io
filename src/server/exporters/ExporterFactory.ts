@@ -12,7 +12,7 @@ export class ExporterFactory {
   constructor(fileRepository: FileRepository) {
     // Register default exporters
     this.register('json', new JSONExporter(fileRepository));
-    this.register('sql', new SQLExporter(fileRepository));
+    this.register('sql', new SQLExporter());
   }
 
   /**
