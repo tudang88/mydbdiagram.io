@@ -88,6 +88,6 @@ jobs:
 
       - name: Test summary
         run: |
-          echo "✅ All testable components verified"
-          echo "Note: Some tests may require server running or external dependencies"
+          echo "✅ Test job completed"
+          echo "Note: Some tests may be skipped if they require server or external dependencies"
 
