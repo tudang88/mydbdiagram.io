@@ -23,7 +23,7 @@ async function testComponentIntegration(): Promise<void> {
   const apiClient = new ApiClient();
   const validator = new DiagramValidator();
   const diagramService = new DiagramService(apiClient, validator);
-  const exportService = new ExportService(apiClient);
+  const _exportService = new ExportService(apiClient); // Reserved for future export tests
   const diagramStore = new DiagramStore();
   const uiStore = new UIStore();
 
@@ -246,7 +246,7 @@ async function testExportImportFlow(): Promise<void> {
 
   const apiClient = new ApiClient();
   const exportService = new ExportService(apiClient);
-  const diagramStore = new DiagramStore();
+  const _diagramStore = new DiagramStore(); // Used in handleExport function
 
   // Test export flow
   const diagram = Diagram.create('export-test');
