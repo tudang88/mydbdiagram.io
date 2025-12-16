@@ -206,28 +206,6 @@ async function testExportController(): Promise<void> {
   const controller = new ExportController(exportService);
 
   // Note: ExportController tests verify structure, actual export requires diagram in repository
-    id: 'test-diagram',
-    tables: [
-      {
-        id: 'table-1',
-        name: 'Users',
-        position: { x: 100, y: 100 },
-        columns: [
-          {
-            id: 'col-1',
-            name: 'id',
-            type: 'INTEGER',
-            constraints: [{ type: 'PRIMARY_KEY' as ConstraintType }],
-          },
-        ],
-      },
-    ],
-    relationships: [],
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  };
 
   // Test export JSON
   const jsonReq = new MockRequest();
