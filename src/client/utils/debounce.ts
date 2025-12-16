@@ -30,17 +30,17 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: Parameters<T>) => ReturnType<T> {
   let lastCall = 0;
   let timeout: NodeJS.Timeout | null = null;
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(...args: Parameters<T>): ReturnType<T> {
     const now = Date.now();
     const timeSinceLastCall = now - lastCall;
 
     if (timeSinceLastCall >= wait) {
       lastCall = now;
-      func(...args);
+      return func(...args) as ReturnType<T>;
     } else {
       if (timeout) {
         clearTimeout(timeout);
@@ -49,6 +49,7 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
         lastCall = Date.now();
         func(...args);
       }, wait - timeSinceLastCall);
+      return func(...args) as ReturnType<T>;
     }
   };
 }
