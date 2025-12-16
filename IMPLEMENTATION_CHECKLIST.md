@@ -180,11 +180,11 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement relationship line component"
 
 ### 4.8 UI Components - Editor
-- [ ] Create TableEditor component
-- [ ] Create ColumnEditor component
-- [ ] Add form validation
-- [ ] Add save/cancel functionality
-- [ ] Commit: "feat: implement editor components"
+- [x] Create TableEditor component
+- [x] Create ColumnEditor component
+- [x] Add form validation
+- [x] Add save/cancel functionality
+- [x] Commit: "feat: implement editor components"
 
 ### 4.9 UI Components - Toolbar
 - [ ] Create Toolbar component
