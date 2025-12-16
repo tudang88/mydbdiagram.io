@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useRef, useState, useEffect } from 'react';
 import { Table } from '../../core/table/Table';
 import './TableNode.css';
 
@@ -23,11 +23,15 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
 }) => {
   const position = table.getPosition();
   const columns = table.getAllColumns();
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const animationFrameRef = useRef<number | null>(null);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       onSelect(table.getId());
+      setIsDragging(true);
       onDragStart(table.getId(), e);
     },
     [table, onSelect, onDragStart]
@@ -35,26 +39,53 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (e.buttons === 1) {
-        // Left mouse button pressed
-        onDrag(table.getId(), e);
+      if (isDragging && e.buttons === 1) {
+        // Cancel previous animation frame
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+
+        // Use requestAnimationFrame for smooth updates
+        animationFrameRef.current = requestAnimationFrame(() => {
+          onDrag(table.getId(), e);
+        });
       }
     },
-    [table, onDrag]
+    [isDragging, table, onDrag]
   );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    onDragEnd();
+  }, [onDragEnd]);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div
-      className={`table-node ${isSelected ? 'selected' : ''}`}
+      ref={nodeRef}
+      className={`table-node ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
       data-table-id={table.getId()}
       style={{
+        position: 'absolute',
         left: `${position.x}px`,
         top: `${position.y}px`,
+        willChange: isDragging ? 'transform' : 'auto',
+        transition: isDragging ? 'none' : 'left 0.1s ease-out, top 0.1s ease-out',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={onDragEnd}
-      onMouseLeave={onDragEnd}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onDoubleClick={() => onDoubleClick?.(table.getId())}
     >
       <div className="table-header">

@@ -39,13 +39,21 @@ npm install
 ### Development
 
 ```bash
-# Run both frontend and backend in development mode
+# Recommended: Use run.sh script (automatically handles port conflicts)
+./run.sh
+
+# Or run directly with npm:
 npm run dev
 
 # Or run separately:
 npm run dev:server  # Backend on http://localhost:3000
 npm run dev:client  # Frontend on http://localhost:5173
 ```
+
+**Note**: The `run.sh` script automatically:
+- Kills any processes using ports 3000, 5173, 5174, or 5175
+- Installs dependencies if needed
+- Starts the application with proper error handling
 
 The application will be available at `http://localhost:5173` (frontend) with the backend API at `http://localhost:3000`.
 

@@ -1,3 +1,9 @@
+.table-node.dragging {
+  cursor: grabbing !important;
+  user-select: none;
+  z-index: 1000;
+}
+
 .table-node {
   position: absolute;
   min-width: 200px;

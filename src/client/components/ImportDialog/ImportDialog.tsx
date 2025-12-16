@@ -161,7 +161,9 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
           <div className="import-input-area">
             {mode === 'sql' && (
               <div className="input-group">
-                <label htmlFor="sql-input">SQL DDL Statements</label>
+                <label htmlFor="sql-input">
+                  <strong>SQL Editor</strong> - Write or paste your SQL DDL statements
+                </label>
                 <textarea
                   id="sql-input"
                   value={sqlText}
@@ -169,10 +171,18 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
                     setSqlText(e.target.value);
                     setError(null);
                   }}
-                  placeholder="Paste your SQL CREATE TABLE statements here..."
-                  rows={15}
+                  placeholder="-- Example SQL DDL&#10;CREATE TABLE users (&#10;  id INT PRIMARY KEY,&#10;  name VARCHAR(100) NOT NULL,&#10;  email VARCHAR(100) UNIQUE&#10;);&#10;&#10;CREATE TABLE posts (&#10;  id INT PRIMARY KEY,&#10;  user_id INT,&#10;  title VARCHAR(200),&#10;  FOREIGN KEY (user_id) REFERENCES users(id)&#10;);"
+                  rows={20}
                   className={error ? 'error' : ''}
+                  style={{
+                    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                    fontSize: '13px',
+                  }}
                 />
+                <div className="editor-hint">
+                  💡 Tip: You can write multiple CREATE TABLE statements. The parser will extract
+                  tables, columns, and relationships automatically.
+                </div>
               </div>
             )}
 

@@ -6,6 +6,7 @@ import { LoadingIndicator } from './components/LoadingIndicator/LoadingIndicator
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp';
 import { Toolbar } from './components/Toolbar/Toolbar';
 import { DiagramCanvas } from './components/DiagramCanvas/DiagramCanvas';
+import { SQLEditor } from './components/SQLEditor/SQLEditor';
 import { TableEditor } from './components/TableEditor/TableEditor';
 import { ColumnEditor } from './components/ColumnEditor/ColumnEditor';
 import { RelationshipCreator } from './components/RelationshipCreator/RelationshipCreator';
@@ -44,6 +45,8 @@ function App() {
   const [showRelationshipCreator, setShowRelationshipCreator] = useState(false);
   const [relationshipFromTable, setRelationshipFromTable] = useState<string | undefined>();
   const [relationshipToTable, setRelationshipToTable] = useState<string | undefined>();
+  const [sqlDialect, setSqlDialect] = useState<'sql' | 'postgresql'>('sql');
+  const [showSQLEditor] = useState(true); // Can be toggled in future
 
   const showNotification = useCallback((type: NotificationType, message: string) => {
     setNotification({ type, message });
@@ -217,6 +220,14 @@ function App() {
     }
   }, [diagramStore, uiStore]);
 
+  const handleDiagramChangeFromSQL = useCallback(
+    (newDiagram: Diagram) => {
+      diagramStore.setDiagram(newDiagram);
+      setError(null);
+    },
+    [diagramStore]
+  );
+
   return (
     <ErrorBoundary>
       <div className="app">
@@ -228,15 +239,27 @@ function App() {
           onDiagramLoaded={handleDiagramLoaded}
         />
         <div className="app-main">
-          <DiagramCanvas
-            diagramStore={diagramStore}
-            uiStore={uiStore}
-            onTableDoubleClick={handleTableDoubleClick}
-            onColumnDoubleClick={handleColumnDoubleClick}
-            onRelationshipCreate={handleRelationshipCreate}
-            onTableDelete={handleTableDelete}
-            onTableAdd={handleTableAdd}
-          />
+          {showSQLEditor && (
+            <div className="app-editor-panel">
+              <SQLEditor
+                diagram={diagramStore.getDiagram()}
+                onDiagramChange={handleDiagramChangeFromSQL}
+                sqlDialect={sqlDialect}
+                onDialectChange={setSqlDialect}
+              />
+            </div>
+          )}
+          <div className="app-canvas-panel">
+            <DiagramCanvas
+              diagramStore={diagramStore}
+              uiStore={uiStore}
+              onTableDoubleClick={handleTableDoubleClick}
+              onColumnDoubleClick={handleColumnDoubleClick}
+              onRelationshipCreate={handleRelationshipCreate}
+              onTableDelete={handleTableDelete}
+              onTableAdd={handleTableAdd}
+            />
+          </div>
         </div>
         {error && <ErrorMessage message={error} onDismiss={handleDismissError} />}
         {notification && (

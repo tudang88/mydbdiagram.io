@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
+import { FrontendExporter } from '../../core/exporter/FrontendExporter';
 import './ExportDialog.css';
 
 interface ExportDialogProps {
@@ -27,6 +28,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const [exportProgress, setExportProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const frontendExporter = new FrontendExporter();
 
   if (!isOpen) return null;
 
@@ -34,12 +36,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     const diagram = diagramStore.getDiagram();
     if (!diagram) {
       setError('No diagram to export');
-      return;
-    }
-
-    const diagramId = diagram.getId();
-    if (!diagramId) {
-      setError('Diagram must be saved before exporting');
       return;
     }
 
@@ -52,47 +48,74 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       // Simulate progress
       setExportProgress(25);
 
-      const result = await exportService.exportDiagram(diagramId, selectedFormat);
+      // Try to export using frontend exporter first (works without saving)
+      let exportData: string | undefined;
+      let exportError: string | undefined;
+
+      if (selectedFormat === 'json') {
+        const result = frontendExporter.exportJSON(diagram);
+        if (result.success) {
+          exportData = result.data;
+        } else {
+          exportError = result.error;
+        }
+      } else if (selectedFormat === 'sql') {
+        const result = frontendExporter.exportSQL(diagram);
+        if (result.success) {
+          exportData = result.data;
+        } else {
+          exportError = result.error;
+        }
+      } else if (selectedFormat === 'svg') {
+        const result = frontendExporter.exportSVG(diagram);
+        if (result.success) {
+          exportData = result.data;
+        } else {
+          exportError = result.error;
+        }
+      }
 
       setExportProgress(75);
 
-      if (!result.success) {
-        setError(result.error || 'Export failed');
-        setIsExporting(false);
-        setExportProgress(0);
-        return;
+      if (exportError || !exportData) {
+        // Fallback to backend export if diagram is saved
+        const diagramId = diagram.getId();
+        if (diagramId) {
+          const result = await exportService.exportDiagram(diagramId, selectedFormat);
+          if (!result.success) {
+            setError(result.error || exportError || 'Export failed');
+            setIsExporting(false);
+            setExportProgress(0);
+            return;
+          }
+          exportData = result.data as string;
+        } else {
+          setError(exportError || 'Export failed');
+          setIsExporting(false);
+          setExportProgress(0);
+          return;
+        }
       }
 
       setExportProgress(90);
 
-      // Handle download
-      if (result.downloadUrl) {
-        // Create download link
-        const link = document.createElement('a');
-        link.href = result.downloadUrl;
-        link.download = `diagram.${selectedFormat}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else if (result.data) {
-        // Create blob and download
-        const blob = new Blob([result.data as string], {
-          type:
-            selectedFormat === 'json'
-              ? 'application/json'
-              : selectedFormat === 'sql'
-                ? 'text/plain'
-                : 'image/svg+xml',
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `diagram.${selectedFormat}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
+      // Create blob and download
+      const blob = new Blob([exportData], {
+        type:
+          selectedFormat === 'json'
+            ? 'application/json'
+            : selectedFormat === 'sql'
+              ? 'text/plain'
+              : 'image/svg+xml',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `diagram-${Date.now()}.${selectedFormat}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       setExportProgress(100);
       setSuccess(true);

@@ -44,10 +44,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
     try {
       const result = await diagramService.saveDiagram(diagram);
-      if (result.success) {
+      if (result.success && result.data) {
+        // Update diagram with saved data (including ID if it was a new diagram)
+        const savedDiagram = Diagram.fromJSON(result.data);
+        diagramStore.setDiagram(savedDiagram);
         alert('Diagram saved successfully!');
       } else {
-        alert(`Failed to save diagram: ${result.errors?.map(e => e.message).join(', ')}`);
+        const errorMessages = result.errors?.map(e => e.message).join(', ') || 'Unknown error';
+        alert(`Failed to save diagram: ${errorMessages}`);
       }
     } catch (error) {
       alert(`Error saving diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);

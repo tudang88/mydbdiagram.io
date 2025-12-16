@@ -1,0 +1,140 @@
+.sql-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.sql-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #252526;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.dialect-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dialect-selector label {
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.dialect-select {
+  padding: 4px 8px;
+  background: #3c3c3c;
+  border: 1px solid #3e3e42;
+  border-radius: 3px;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dialect-select:hover {
+  background: #454545;
+}
+
+.dialect-select:focus {
+  outline: 1px solid #007acc;
+  outline-offset: -1px;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.format-button {
+  padding: 4px 12px;
+  background: #0e639c;
+  border: none;
+  border-radius: 3px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.format-button:hover {
+  background: #1177bb;
+}
+
+.sql-editor-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.line-numbers {
+  width: 50px;
+  padding: 10px 8px;
+  background: #1e1e1e;
+  color: #858585;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+  border-right: 1px solid #3e3e42;
+}
+
+.line-number {
+  min-height: 19.5px;
+}
+
+.sql-textarea {
+  flex: 1;
+  padding: 10px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  resize: none;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.sql-textarea::placeholder {
+  color: #6a6a6a;
+}
+
+.sql-textarea.error {
+  border-left: 3px solid #f48771;
+}
+
+.sql-editor-error {
+  padding: 8px 12px;
+  background: #3a1d1d;
+  border-top: 1px solid #f48771;
+  color: #f48771;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.sql-editor-error pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  flex: 1;
+}
+
+.error-icon {
+  flex-shrink: 0;
+}
