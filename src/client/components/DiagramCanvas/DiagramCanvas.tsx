@@ -98,10 +98,10 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ diagramStore, uiSt
 
   // Handle table drag
   const handleTableDrag = useCallback(
-    (tableId: string, e: React.MouseEvent) => {
+    (_tableId: string, e: React.MouseEvent) => {
       if (!diagram) return;
 
-      const table = diagram.getTable(tableId);
+      const table = diagram.getTable(_tableId);
       if (!table) return;
 
       const currentPos = table.getPosition();

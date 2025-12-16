@@ -159,25 +159,25 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement parsers"
 
 ### 4.5 UI Components - Canvas
-- [ ] Create DiagramCanvas component
-- [ ] Implement zoom functionality
-- [ ] Implement pan functionality
-- [ ] Add canvas rendering
-- [ ] Commit: "feat: implement diagram canvas"
+- [x] Create DiagramCanvas component
+- [x] Implement zoom functionality
+- [x] Implement pan functionality
+- [x] Add canvas rendering
+- [x] Commit: "feat: implement diagram canvas"
 
 ### 4.6 UI Components - Table Node
-- [ ] Create TableNode component
-- [ ] Implement table rendering
-- [ ] Add drag functionality
-- [ ] Add selection handling
-- [ ] Commit: "feat: implement table node component"
+- [x] Create TableNode component
+- [x] Implement table rendering
+- [x] Add drag functionality
+- [x] Add selection handling
+- [x] Commit: "feat: implement table node component"
 
 ### 4.7 UI Components - Relationship Line
-- [ ] Create RelationshipLine component
-- [ ] Implement line rendering
-- [ ] Add relationship type visualization
-- [ ] Add label display
-- [ ] Commit: "feat: implement relationship line component"
+- [x] Create RelationshipLine component
+- [x] Implement line rendering
+- [x] Add relationship type visualization
+- [x] Add optional marker display
+- [x] Commit: "feat: implement relationship line component"
 
 ### 4.8 UI Components - Editor
 - [ ] Create TableEditor component

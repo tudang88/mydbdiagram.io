@@ -26,7 +26,7 @@ export const RelationshipLine: React.FC<RelationshipLineProps> = ({
   // Calculate line direction for arrow
   const dx = toX - fromX;
   const dy = toY - fromY;
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const _angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
   // Determine relationship type styling
   const getLineStyle = () => {
@@ -65,7 +65,7 @@ export const RelationshipLine: React.FC<RelationshipLineProps> = ({
           markerHeight={arrowSize}
           refX={arrowSize}
           refY={arrowSize / 2}
-          orient="auto"
+          orient="auto-start-reverse"
         >
           <polygon
             points={`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`}
