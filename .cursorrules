@@ -1,0 +1,138 @@
+# MyDBDiagram.io - Cursor Rules
+
+## Project Overview
+This is a personal tool similar to dbdiagram.io for creating database diagrams. The project uses TypeScript and follows modern web development practices.
+
+## Project Structure
+- `design/`: Design files and mockups
+- `output/`: Exported files from the tool (diagrams, images, etc.)
+- `src/`: All source code
+
+## Code Standards
+
+### Language & Framework
+- Use TypeScript for all code
+- Use ES modules (import/export)
+- Prefer modern JavaScript features (async/await, destructuring, etc.)
+
+### Code Style
+- Use 2 spaces for indentation
+- Use single quotes for strings
+- Always use semicolons
+- Use camelCase for variables and functions
+- Use PascalCase for classes and types
+- Use UPPER_SNAKE_CASE for constants
+- Maximum line length: 100 characters
+
+### TypeScript Rules
+- Always define types/interfaces for function parameters and return values
+- Avoid `any` type - use `unknown` if type is truly unknown
+- Use strict mode settings
+- Prefer interfaces over type aliases for object shapes
+- Use type guards when needed
+
+### File Organization
+- One main export per file
+- Group related functionality in the same directory
+- Use index.ts files for clean exports
+- Keep files focused and under 300 lines when possible
+
+### Naming Conventions
+- Components: PascalCase (e.g., `DatabaseDiagram.tsx`)
+- Utilities: camelCase (e.g., `parseSchema.ts`)
+- Types/Interfaces: PascalCase with descriptive names (e.g., `TableSchema`, `Relationship`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_TABLE_COUNT`)
+- Private methods: prefix with underscore (e.g., `_validateInput()`)
+
+### Error Handling
+- Always handle errors explicitly
+- Use try-catch for async operations
+- Provide meaningful error messages
+- Log errors appropriately (use console.error, not console.log)
+
+### Comments & Documentation
+- Write self-documenting code
+- Add JSDoc comments for public APIs
+- Explain "why" not "what" in comments
+- Keep comments up-to-date with code changes
+
+### Testing Considerations
+- Write testable code (pure functions when possible)
+- Keep business logic separate from UI logic
+- Use dependency injection for better testability
+
+### Performance
+- Avoid premature optimization
+- Use lazy loading for large components
+- Memoize expensive calculations
+- Consider performance implications of data structures
+
+### Git & Version Control
+- Write clear, descriptive commit messages
+- Keep commits focused and atomic
+- Don't commit generated files (check .gitignore)
+
+## Project-Specific Guidelines
+
+### Database Diagram Features
+- Support common database relationships (one-to-one, one-to-many, many-to-many)
+- Handle table schemas with columns, types, and constraints
+- Support export to multiple formats (PNG, SVG, SQL, etc.)
+- Maintain diagram state and allow undo/redo
+
+### Code Organization Suggestions
+- `src/core/`: Core business logic (parsers, validators, diagram engine)
+- `src/types/`: TypeScript type definitions
+- `src/utils/`: Utility functions
+- `src/components/`: UI components (if using a framework)
+- `src/exporters/`: Export functionality for different formats
+- `src/parsers/`: Input parsers (SQL, JSON, etc.)
+
+### When Adding New Features
+1. Define types/interfaces first
+2. **Update or create design document** in `design/` directory
+3. Write the core logic
+4. Add error handling
+5. Consider edge cases
+6. **Ensure design document reflects the implementation**
+7. Update code documentation if needed
+
+## Dependencies
+- Prefer lightweight, well-maintained packages
+- Avoid unnecessary dependencies
+- Check bundle size impact for frontend code
+
+## Output Directory
+- All exports should go to `output/` directory
+- Use descriptive filenames with timestamps or user-defined names
+- Support multiple export formats
+
+## Design Files & Documentation
+
+### Design Document Maintenance
+- **CRITICAL**: All changes to functions/logic MUST be reflected in design documents
+- When modifying or adding functions, update the corresponding design document in `design/` directory
+- Design documents should track:
+  - Function signatures and behavior changes
+  - Logic flow modifications
+  - New features and their implementation approach
+  - Architecture decisions and rationale
+- Keep design documents synchronized with code changes
+- If a design document doesn't exist for a feature, create one before or during implementation
+
+### Design File Guidelines
+- Reference design files in `design/` when implementing UI
+- Follow design patterns and conventions from design files
+- Use design documents as the source of truth for feature specifications
+- Update design documents when refactoring or changing implementation approach
+
+## AI Assistant Guidelines
+- When suggesting code, follow all the above rules
+- **Always remind to update design documents when making function/logic changes**
+- Prefer explicit over implicit
+- Suggest improvements but explain trade-offs
+- Ask for clarification if requirements are unclear
+- Provide code examples that match the project's style
+- Consider both functionality and maintainability
+- When implementing new features or modifying existing ones, check if design documents need updates
+
