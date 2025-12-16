@@ -203,12 +203,12 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 ## Phase 5: Features Implementation
 
 ### 5.1 Import Functionality
-- [ ] Add SQL import UI
-- [ ] Add JSON import UI
-- [ ] Connect to parsers
-- [ ] Add import validation
-- [ ] Add error messages
-- [ ] Commit: "feat: implement import functionality"
+- [x] Add SQL import UI
+- [x] Add JSON import UI
+- [x] Connect to parsers
+- [x] Add import validation
+- [x] Add error messages
+- [x] Commit: "feat: implement import functionality"
 
 ### 5.2 Export Functionality
 - [ ] Connect export UI to services
