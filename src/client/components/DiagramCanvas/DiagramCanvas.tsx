@@ -9,9 +9,18 @@ import './DiagramCanvas.css';
 interface DiagramCanvasProps {
   diagramStore: DiagramStore;
   uiStore: UIStore;
+  onTableDoubleClick?: (tableId: string) => void;
+  onColumnDoubleClick?: (tableId: string, columnId: string) => void;
 }
 
-export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ diagramStore, uiStore }) => {
+// Note: onColumnDoubleClick is reserved for future column editing feature
+
+export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
+  diagramStore,
+  uiStore,
+  onTableDoubleClick,
+  onColumnDoubleClick,
+}) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [diagram, setDiagram] = useState<Diagram | null>(null);
   const [uiState, setUIState] = useState(uiStore.getState());
@@ -88,6 +97,14 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ diagramStore, uiSt
       uiStore.setState({ selectedTableId: tableId });
     },
     [uiStore]
+  );
+
+  // Handle table double click (for editing)
+  const handleTableDoubleClick = useCallback(
+    (tableId: string) => {
+      onTableDoubleClick?.(tableId);
+    },
+    [onTableDoubleClick]
   );
 
   // Handle table drag start
@@ -213,6 +230,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ diagramStore, uiSt
                 table={table}
                 isSelected={uiState.selectedTableId === table.getId()}
                 onSelect={handleTableSelect}
+                onDoubleClick={handleTableDoubleClick}
                 onDragStart={handleTableDragStart}
                 onDrag={handleTableDrag}
                 onDragEnd={handleTableDragEnd}

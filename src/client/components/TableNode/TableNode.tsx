@@ -6,6 +6,7 @@ interface TableNodeProps {
   table: Table;
   isSelected: boolean;
   onSelect: (tableId: string) => void;
+  onDoubleClick?: (tableId: string) => void;
   onDragStart: (tableId: string, e: React.MouseEvent) => void;
   onDrag: (tableId: string, e: React.MouseEvent) => void;
   onDragEnd: () => void;
@@ -15,6 +16,7 @@ export const TableNode: React.FC<TableNodeProps> = ({
   table,
   isSelected,
   onSelect,
+  onDoubleClick,
   onDragStart,
   onDrag,
   onDragEnd,
@@ -52,6 +54,7 @@ export const TableNode: React.FC<TableNodeProps> = ({
       onMouseMove={handleMouseMove}
       onMouseUp={onDragEnd}
       onMouseLeave={onDragEnd}
+      onDoubleClick={() => onDoubleClick?.(table.getId())}
     >
       <div className="table-header">
         <h3 className="table-name">{table.getName()}</h3>
