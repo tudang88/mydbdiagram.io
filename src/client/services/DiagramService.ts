@@ -36,26 +36,10 @@ export class DiagramService {
     private validator: DiagramValidator
   ) {}
 
-  // Debounced save function to prevent excessive API calls
-  private debouncedSave: ((diagram: Diagram) => Promise<SaveResult>) | null = null;
-
   /**
-   * Save diagram with debouncing for auto-save scenarios
+   * Save diagram
    */
-  async saveDiagram(diagram: Diagram, debounceMs: number = 0): Promise<SaveResult> {
-    // If debounce is requested, use debounced version
-    if (debounceMs > 0) {
-      if (!this.debouncedSave) {
-        this.debouncedSave = debounce(
-          async (d: Diagram) => {
-            return this.saveDiagramInternal(d);
-          },
-          debounceMs
-        ) as (diagram: Diagram) => Promise<SaveResult>;
-      }
-      return this.debouncedSave(diagram);
-    }
-
+  async saveDiagram(diagram: Diagram): Promise<SaveResult> {
     return this.saveDiagramInternal(diagram);
   }
 
