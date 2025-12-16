@@ -33,34 +33,34 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 ## Phase 2: Core Domain Models
 
 ### 2.1 Type Definitions
-- [ ] Create diagram.types.ts with Diagram, Table, Relationship interfaces
-- [ ] Create table.types.ts with Table, Column interfaces
-- [ ] Create relationship.types.ts with Relationship interface
-- [ ] Create common.types.ts for shared types (Position, Metadata, etc.)
-- [ ] Commit: "feat: add core type definitions"
+- [x] Create diagram.types.ts with Diagram, Table, Relationship interfaces
+- [x] Create table.types.ts with Table, Column interfaces
+- [x] Create relationship.types.ts with Relationship interface
+- [x] Create common.types.ts for shared types (Position, Metadata, etc.)
+- [x] Commit: "feat: add core type definitions"
 
 ### 2.2 Diagram Domain Model
-- [ ] Implement Diagram class with basic structure
-- [ ] Implement addTable/removeTable methods
-- [ ] Implement addRelationship/removeRelationship methods
-- [ ] Implement getTable/getAllTables methods
-- [ ] Implement getRelationship/getAllRelationships methods
-- [ ] Implement toJSON/fromJSON methods
-- [ ] Commit: "feat: implement Diagram domain model"
+- [x] Implement Diagram class with basic structure
+- [x] Implement addTable/removeTable methods
+- [x] Implement addRelationship/removeRelationship methods
+- [x] Implement getTable/getAllTables methods
+- [x] Implement getRelationship/getAllRelationships methods
+- [x] Implement toJSON/fromJSON methods
+- [x] Commit: "feat: implement Diagram domain model"
 
 ### 2.3 Table Domain Model
-- [ ] Implement Table class with basic structure
-- [ ] Implement addColumn/removeColumn/updateColumn methods
-- [ ] Implement getColumn/getAllColumns methods
-- [ ] Implement moveTo method for position
-- [ ] Implement toJSON/fromJSON methods
-- [ ] Commit: "feat: implement Table domain model"
+- [x] Implement Table class with basic structure
+- [x] Implement addColumn/removeColumn/updateColumn methods
+- [x] Implement getColumn/getAllColumns methods
+- [x] Implement moveTo method for position
+- [x] Implement toJSON/fromJSON methods
+- [x] Commit: "feat: implement Table domain model"
 
 ### 2.4 Relationship Domain Model
-- [ ] Implement Relationship class
-- [ ] Implement validate method
-- [ ] Implement toJSON/fromJSON methods
-- [ ] Commit: "feat: implement Relationship domain model"
+- [x] Implement Relationship class
+- [x] Implement validate method
+- [x] Implement toJSON/fromJSON methods
+- [x] Commit: "feat: implement Relationship domain model"
 
 ### 2.5 Validators
 - [ ] Implement DiagramValidator class
