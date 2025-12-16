@@ -226,12 +226,12 @@ This checklist breaks down the implementation into small, trackable tasks. Each 
 - [x] Commit: "feat: implement save/load functionality"
 
 ### 5.4 Canvas Interactions
-- [ ] Add table selection
-- [ ] Add table dragging
-- [ ] Add relationship creation UI
-- [ ] Add context menu
-- [ ] Add keyboard shortcuts
-- [ ] Commit: "feat: implement canvas interactions"
+- [x] Add table selection
+- [x] Add table dragging
+- [x] Add relationship creation UI
+- [x] Add context menu
+- [x] Add keyboard shortcuts
+- [x] Commit: "feat: implement canvas interactions"
 
 ## Phase 6: Testing
 
