@@ -2,6 +2,17 @@
 
 This checklist breaks down the implementation into small, trackable tasks. Each task should be completed and committed separately for easy tracking.
 
+## ⚠️ IMPORTANT: Testing Requirements
+
+**After completing each phase, you MUST:**
+- [ ] Run type checking: `npm run type-check`
+- [ ] Run linting: `npm run lint`
+- [ ] Test all new functionality manually
+- [ ] Write test scripts if needed
+- [ ] Verify integration between components
+- [ ] Document test results
+- [ ] Only mark phase as complete after all tests pass
+
 ## Phase 1: Project Setup & Infrastructure
 
 ### 1.1 Initial Setup
