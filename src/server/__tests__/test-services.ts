@@ -7,7 +7,7 @@ import { DiagramService } from '../services/DiagramService';
 import { ValidationService } from '../services/ValidationService';
 import { DiagramRepository } from '../repositories/DiagramRepository';
 import { FileRepository } from '../repositories/FileRepository';
-import { DiagramData } from '../../client/types/diagram.types';
+import { ConstraintType } from '../../client/types/common.types';
 
 const TEST_DATA_DIR = './test-data';
 
@@ -89,7 +89,7 @@ async function testDiagramService(): Promise<void> {
             id: 'col-1',
             name: 'id',
             type: 'INTEGER',
-            constraints: [{ type: 'PRIMARY_KEY' }],
+            constraints: [{ type: 'PRIMARY_KEY' as ConstraintType }],
           },
         ],
       },

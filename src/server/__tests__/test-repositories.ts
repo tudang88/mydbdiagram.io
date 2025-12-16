@@ -7,7 +7,6 @@ import { FileRepository } from '../repositories/FileRepository';
 import { DiagramRepository } from '../repositories/DiagramRepository';
 import { DiagramData } from '../../client/types/diagram.types';
 import { promises as fs } from 'fs';
-import { join } from 'path';
 
 const TEST_DATA_DIR = './test-data';
 const TEST_OUTPUT_DIR = './test-output';

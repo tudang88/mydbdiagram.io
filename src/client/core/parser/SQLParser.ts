@@ -1,7 +1,8 @@
 import { Parser, ParseResult, ParseError } from './ParserInterface';
 import { Diagram } from '../diagram/Diagram';
-import { DiagramData, TableData } from '../../types/diagram.types';
-import { ValidationResult } from '../../types/common.types';
+import { DiagramData } from '../../types/diagram.types';
+import { TableData } from '../../types/table.types';
+import { ValidationResult, ConstraintType } from '../../types/common.types';
 
 /**
  * SQL Parser
@@ -120,7 +121,7 @@ export class SQLParser implements Parser<string, Diagram> {
           columnIdCounter++;
           const columnName = columnMatch[1];
           const columnType = columnMatch[2];
-          const constraints: Array<{ type: string; value?: string }> = [];
+          const constraints: Array<{ type: ConstraintType; value?: string }> = [];
 
           // Check for constraints
           if (upperLine.includes('PRIMARY KEY')) {
