@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { ErrorMessage } from './components/ErrorMessage/ErrorMessage';
+import { Notification, NotificationType } from './components/Notification/Notification';
+import { LoadingIndicator } from './components/LoadingIndicator/LoadingIndicator';
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp';
 import { Toolbar } from './components/Toolbar/Toolbar';
 import { DiagramCanvas } from './components/DiagramCanvas/DiagramCanvas';
 import { TableEditor } from './components/TableEditor/TableEditor';
@@ -28,6 +31,10 @@ const uiStore = new UIStore();
 
 function App() {
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: NotificationType; message: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage] = useState<string | undefined>();
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
@@ -35,12 +42,23 @@ function App() {
   const [relationshipFromTable, setRelationshipFromTable] = useState<string | undefined>();
   const [relationshipToTable, setRelationshipToTable] = useState<string | undefined>();
 
-  const handleNewDiagram = useCallback(() => {
-    const newDiagram = Diagram.create(`diagram-${Date.now()}`);
-    diagramStore.setDiagram(newDiagram);
-    uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
-    setError(null);
+  const showNotification = useCallback((type: NotificationType, message: string) => {
+    setNotification({ type, message });
   }, []);
+
+  const handleNewDiagram = useCallback(() => {
+    try {
+      const newDiagram = Diagram.create(`diagram-${Date.now()}`);
+      diagramStore.setDiagram(newDiagram);
+      uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
+      setError(null);
+      showNotification('success', 'New diagram created');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create new diagram';
+      setError(errorMsg);
+      showNotification('error', errorMsg);
+    }
+  }, [showNotification]);
 
   const handleDiagramLoaded = useCallback(() => {
     uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
@@ -121,6 +139,22 @@ function App() {
 
   const handleDismissError = useCallback(() => {
     setError(null);
+  }, []);
+
+  const handleDismissNotification = useCallback(() => {
+    setNotification(null);
+  }, []);
+
+  // Keyboard shortcut for help
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setShowShortcutsHelp(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleRelationshipCreate = useCallback((fromTableId: string, toTableId?: string) => {
@@ -209,6 +243,20 @@ function App() {
           />
         </div>
         {error && <ErrorMessage message={error} onDismiss={handleDismissError} />}
+        {notification && (
+          <Notification
+            type={notification.type}
+            message={notification.message}
+            onClose={handleDismissNotification}
+          />
+        )}
+        {loading && <LoadingIndicator message={loadingMessage || 'Loading...'} />}
+        {showShortcutsHelp && (
+          <KeyboardShortcutsHelp
+            isOpen={showShortcutsHelp}
+            onClose={() => setShowShortcutsHelp(false)}
+          />
+        )}
         {editingTable && (
           <TableEditor
             table={editingTable}

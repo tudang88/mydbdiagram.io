@@ -28,7 +28,15 @@
   font-size: 14px;
 }
 
-.error-reset-button {
+.error-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.error-reset-button,
+.error-reload-button {
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
@@ -40,7 +48,38 @@
   transition: background-color 0.2s;
 }
 
-.error-reset-button:hover {
+.error-reset-button:hover,
+.error-reload-button:hover {
   background: #0056b3;
 }
 
+.error-reload-button {
+  background: #6c757d;
+}
+
+.error-reload-button:hover {
+  background: #5a6268;
+}
+
+.error-stack {
+  margin-top: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.error-stack summary {
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.error-stack pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #721c24;
+}

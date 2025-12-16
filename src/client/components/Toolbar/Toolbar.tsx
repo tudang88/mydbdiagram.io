@@ -6,6 +6,7 @@ import { Diagram } from '../../core/diagram/Diagram';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
 import { ExportDialog } from '../ExportDialog/ExportDialog';
 import { LoadDialog } from '../LoadDialog/LoadDialog';
+import { KeyboardShortcutsHelp } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -26,6 +27,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
   const handleNew = () => {
     const newDiagram = Diagram.create(`diagram-${Date.now()}`);
@@ -123,6 +125,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         diagramService={diagramService}
         diagramStore={diagramStore}
       />
+      {showShortcutsHelp && (
+        <KeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
+        />
+      )}
+      <button
+        className="toolbar-button toolbar-help"
+        onClick={() => setShowShortcutsHelp(true)}
+        title="Keyboard Shortcuts (Ctrl+/)"
+      >
+        ⌨️ Help
+      </button>
     </div>
   );
 };
