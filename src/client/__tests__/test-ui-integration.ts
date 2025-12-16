@@ -23,7 +23,7 @@ async function testComponentIntegration(): Promise<void> {
   const apiClient = new ApiClient();
   const validator = new DiagramValidator();
   const diagramService = new DiagramService(apiClient, validator);
-  const _exportService = new ExportService(apiClient); // Reserved for future export tests
+  // exportService reserved for future export tests
   const diagramStore = new DiagramStore();
   const uiStore = new UIStore();
 
@@ -123,7 +123,7 @@ async function testErrorHandlingIntegration(): Promise<void> {
   const apiClient = new ApiClient();
   const validator = new DiagramValidator();
   const diagramService = new DiagramService(apiClient, validator);
-  const diagramStore = new DiagramStore();
+  // diagramStore reserved for future error state tests
 
   // Test save error handling
   const diagram = Diagram.create('test-diagram');
