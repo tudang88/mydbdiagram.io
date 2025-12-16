@@ -1,6 +1,8 @@
 import { Diagram as DiagramType, DiagramData } from '@/types/diagram.types';
-import { Table } from '@/types/table.types';
-import { Relationship } from '@/types/relationship.types';
+import { Table as TableType } from '@/types/table.types';
+import { Relationship as RelationshipType } from '@/types/relationship.types';
+import { Table } from '../table/Table';
+import { Relationship } from '../relationship/Relationship';
 import { ValidationResult } from '@/types/common.types';
 
 /**
@@ -28,11 +30,14 @@ export class Diagram {
   }
 
   // Table management
-  addTable(table: Table): void {
-    if (this.tables.has(table.id)) {
-      throw new Error(`Table with id ${table.id} already exists`);
+  addTable(table: Table | TableType): void {
+    // Convert type to class if needed
+    const tableInstance = table instanceof Table ? table : Table.fromJSON(table);
+    const tableId = tableInstance.getId();
+    if (this.tables.has(tableId)) {
+      throw new Error(`Table with id ${tableId} already exists`);
     }
-    this.tables.set(table.id, table);
+    this.tables.set(tableId, tableInstance);
     this.updateMetadata();
   }
 
@@ -44,7 +49,7 @@ export class Diagram {
     // Remove relationships involving this table
     const relationshipsToRemove: string[] = [];
     this.relationships.forEach((rel, relId) => {
-      if (rel.fromTableId === tableId || rel.toTableId === tableId) {
+      if (rel.getFromTableId() === tableId || rel.getToTableId() === tableId) {
         relationshipsToRemove.push(relId);
       }
     });
@@ -63,20 +68,25 @@ export class Diagram {
   }
 
   // Relationship management
-  addRelationship(relationship: Relationship): void {
-    if (this.relationships.has(relationship.id)) {
-      throw new Error(`Relationship with id ${relationship.id} already exists`);
+  addRelationship(relationship: Relationship | RelationshipType): void {
+    // Convert type to class if needed
+    const relationshipInstance =
+      relationship instanceof Relationship
+        ? relationship
+        : Relationship.fromJSON(relationship);
+    if (this.relationships.has(relationshipInstance.getId())) {
+      throw new Error(`Relationship with id ${relationshipInstance.getId()} already exists`);
     }
 
     // Validate that referenced tables exist
-    if (!this.tables.has(relationship.fromTableId)) {
-      throw new Error(`From table ${relationship.fromTableId} not found`);
+    if (!this.tables.has(relationshipInstance.getFromTableId())) {
+      throw new Error(`From table ${relationshipInstance.getFromTableId()} not found`);
     }
-    if (!this.tables.has(relationship.toTableId)) {
-      throw new Error(`To table ${relationship.toTableId} not found`);
+    if (!this.tables.has(relationshipInstance.getToTableId())) {
+      throw new Error(`To table ${relationshipInstance.getToTableId()} not found`);
     }
 
-    this.relationships.set(relationship.id, relationship);
+    this.relationships.set(relationshipInstance.getId(), relationshipInstance);
     this.updateMetadata();
   }
 
@@ -102,9 +112,10 @@ export class Diagram {
 
     // Validate tables
     this.tables.forEach((table) => {
-      if (!table.name || table.name.trim() === '') {
+      const name = table.getName();
+      if (!name || name.trim() === '') {
         errors.push({
-          field: `table.${table.id}.name`,
+          field: `table.${table.getId()}.name`,
           message: 'Table name is required',
         });
       }
@@ -112,16 +123,18 @@ export class Diagram {
 
     // Validate relationships
     this.relationships.forEach((rel) => {
-      if (!this.tables.has(rel.fromTableId)) {
+      const fromTableId = rel.getFromTableId();
+      const toTableId = rel.getToTableId();
+      if (!this.tables.has(fromTableId)) {
         errors.push({
-          field: `relationship.${rel.id}.fromTableId`,
-          message: `From table ${rel.fromTableId} does not exist`,
+          field: `relationship.${rel.getId()}.fromTableId`,
+          message: `From table ${fromTableId} does not exist`,
         });
       }
-      if (!this.tables.has(rel.toTableId)) {
+      if (!this.tables.has(toTableId)) {
         errors.push({
-          field: `relationship.${rel.id}.toTableId`,
-          message: `To table ${rel.toTableId} does not exist`,
+          field: `relationship.${rel.getId()}.toTableId`,
+          message: `To table ${toTableId} does not exist`,
         });
       }
     });
@@ -136,8 +149,8 @@ export class Diagram {
   toJSON(): DiagramData {
     return {
       id: this.id,
-      tables: this.getAllTables(),
-      relationships: this.getAllRelationships(),
+      tables: this.getAllTables().map((table) => table.toJSON()),
+      relationships: this.getAllRelationships().map((rel) => rel.toJSON()),
       metadata: this.getMetadata(),
     };
   }
@@ -146,13 +159,15 @@ export class Diagram {
     const diagram = new Diagram(data.id, data.metadata);
 
     // Add tables first
-    data.tables.forEach((table) => {
-      diagram.tables.set(table.id, table);
+    data.tables.forEach((tableData) => {
+      const table = Table.fromJSON(tableData);
+      diagram.tables.set(table.getId(), table);
     });
 
     // Then add relationships
-    data.relationships.forEach((relationship) => {
-      diagram.relationships.set(relationship.id, relationship);
+    data.relationships.forEach((relationshipData) => {
+      const relationship = Relationship.fromJSON(relationshipData);
+      diagram.relationships.set(relationship.getId(), relationship);
     });
 
     return diagram;

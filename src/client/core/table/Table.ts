@@ -1,4 +1,4 @@
-import { Table as TableType, TableData, Column, ColumnData } from '@/types/table.types';
+import { Table as TableType, TableData, Column } from '@/types/table.types';
 import { Position, ValidationResult } from '@/types/common.types';
 
 /**
