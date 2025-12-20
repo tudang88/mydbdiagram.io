@@ -186,4 +186,27 @@ export class Diagram {
   private updateMetadata(): void {
     this.metadata.updatedAt = new Date().toISOString();
   }
+
+  /**
+   * Update metadata with source text and format
+   */
+  setSourceText(text: string, format: 'sql' | 'dbml'): void {
+    this.metadata.sourceText = text;
+    this.metadata.sourceFormat = format;
+    this.updateMetadata();
+  }
+
+  /**
+   * Get source text from metadata
+   */
+  getSourceText(): string | undefined {
+    return this.metadata.sourceText;
+  }
+
+  /**
+   * Get source format from metadata
+   */
+  getSourceFormat(): 'sql' | 'dbml' | undefined {
+    return this.metadata.sourceFormat;
+  }
 }
