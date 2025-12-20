@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DiagramService } from '../../services/DiagramService';
 import { DiagramStore } from '../../state/store/diagramStore';
+import { FrontendExporter } from '../../core/exporter/FrontendExporter';
 import './LoadDialog.css';
 
 interface DiagramListItem {
@@ -12,7 +13,7 @@ interface DiagramListItem {
 interface LoadDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoad: () => void;
+  onLoad: (diagramText?: string) => void; // Callback with optional diagram text for editor
   diagramService: DiagramService;
   diagramStore: DiagramStore;
 }
@@ -66,7 +67,13 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
       const result = await diagramService.loadDiagram(selectedId);
       if (result.success && result.data) {
         diagramStore.setDiagram(result.data);
-        onLoad();
+        
+        // Generate SQL text from diagram to load into editor
+        const exporter = new FrontendExporter();
+        const sqlResult = exporter.exportSQL(result.data);
+        const diagramText = sqlResult.success && sqlResult.data ? sqlResult.data : undefined;
+        
+        onLoad(diagramText);
         onClose();
         setSelectedId(null);
       } else {

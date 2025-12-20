@@ -138,7 +138,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <LoadDialog
         isOpen={showLoadDialog}
         onClose={() => setShowLoadDialog(false)}
-        onLoad={onDiagramLoaded}
+        onLoad={(diagramText) => {
+          onDiagramLoaded();
+          // Set text in editor if provided
+          if (diagramText && onImportText) {
+            onImportText(diagramText);
+          }
+        }}
         diagramService={diagramService}
         diagramStore={diagramStore}
       />
