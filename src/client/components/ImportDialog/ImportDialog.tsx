@@ -148,6 +148,14 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
 
       // Successfully parsed - import the diagram
       console.log('Import successful, diagram:', result.data);
+      // Debug: Check relationships
+      const relationships = result.data.getAllRelationships();
+      console.log(`📊 Imported diagram has ${relationships.length} relationships:`, relationships.map(r => ({
+        id: r.getId(),
+        from: result.data.getTable(r.getFromTableId())?.getName(),
+        to: result.data.getTable(r.getToTableId())?.getName(),
+        type: r.getType(),
+      })));
       // Pass the original text to onImport so it can be set in editor
       const importText = mode === 'sql' ? sqlText : mode === 'json' ? undefined : undefined;
       onImport(result.data, importText);

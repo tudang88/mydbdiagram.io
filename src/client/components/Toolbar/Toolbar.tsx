@@ -61,7 +61,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   const handleImport = (diagram: Diagram, importText?: string) => {
+    // Debug: Check relationships before setting diagram
+    const relationshipsBefore = diagram.getAllRelationships();
+    console.log(`🔍 Before setDiagram: ${relationshipsBefore.length} relationships`);
+    
     diagramStore.setDiagram(diagram);
+    
+    // Debug: Check relationships after setting diagram
+    const diagramAfter = diagramStore.getDiagram();
+    const relationshipsAfter = diagramAfter?.getAllRelationships() || [];
+    console.log(`🔍 After setDiagram: ${relationshipsAfter.length} relationships`);
+    
     onDiagramLoaded();
     // Set text in editor if provided
     if (importText && onImportText) {

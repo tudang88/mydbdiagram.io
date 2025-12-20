@@ -338,6 +338,58 @@ export class SQLParser implements Parser<string, Diagram> {
           currentTable = null;
         }
       }
+      // ALTER TABLE statements (for FOREIGN KEY constraints added after table creation)
+      else if (upperLine.startsWith('ALTER TABLE')) {
+        // Parse ALTER TABLE table_name ADD CONSTRAINT constraint_name FOREIGN KEY (column_name) REFERENCES table_name(column_name)
+        // Pattern: ALTER TABLE `table_name` ADD CONSTRAINT `constraint_name` FOREIGN KEY (`column_name`) REFERENCES `table_name` (`column_name`);
+        // Also support: ALTER TABLE `table_name` ADD FOREIGN KEY (`column_name`) REFERENCES `table_name` (`column_name`);
+        const alterTableMatch = line.match(
+          /ALTER\s+TABLE\s+[`"]?(\w+)[`"]?\s+ADD\s+(?:CONSTRAINT\s+[`"]?\w+[`"]?\s+)?FOREIGN\s+KEY\s*\([`"]?(\w+)[`"]?\)\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
+        );
+        if (alterTableMatch) {
+          const fromTableName = alterTableMatch[1];
+          const fromColumn = alterTableMatch[2];
+          const toTableName = alterTableMatch[3];
+          const toColumn = alterTableMatch[4];
+          
+          const fromTableId = tableNameMap.get(fromTableName.toLowerCase());
+          const toTableId = tableNameMap.get(toTableName.toLowerCase());
+          
+          if (fromTableId && toTableId) {
+            // Add relationship
+            relationships.push({
+              fromTable: fromTableId,
+              toTable: toTableId,
+              fromColumn,
+              toColumn,
+            });
+            
+            // Find the table and add FOREIGN_KEY constraint to the column
+            const fromTable = tables.find(t => t.id === fromTableId);
+            if (fromTable) {
+              const column = fromTable.columns.find(c => c.name === fromColumn);
+              if (column) {
+                // Check if FOREIGN_KEY constraint already exists
+                const hasFkConstraint = column.constraints.some(c => c.type === 'FOREIGN_KEY');
+                if (!hasFkConstraint) {
+                  column.constraints.push({
+                    type: 'FOREIGN_KEY',
+                    value: `${toTableName}.${toColumn}`,
+                  });
+                }
+              }
+            }
+            
+            console.log(
+              `✅ Parsed ALTER TABLE relationship: ${fromTableName}.${fromColumn} -> ${toTableName}.${toColumn}`
+            );
+          } else {
+            console.warn(
+              `⚠️ ALTER TABLE: Table not found - fromTable: ${fromTableName} (${fromTableId}), toTable: ${toTableName} (${toTableId})`
+            );
+          }
+        }
+      }
     }
 
     // Save last table if exists
