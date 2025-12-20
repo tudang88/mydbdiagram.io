@@ -18,7 +18,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   // Use getPosition() directly to ensure we always get latest position
   const fromPos = fromTable.getPosition();
   const toPos = toTable.getPosition();
-  
+
   // Extract position values for dependency tracking
   const fromX = fromPos.x;
   const fromY = fromPos.y;
@@ -98,16 +98,16 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
 
     // Determine marker offsets based on relationship type
     const relationshipType = relationship.getType();
-    
+
     // Check if table is the first table (table-1 - first table ID from parser)
     const isFirstTable = (table: typeof fromTable) => {
       const tableId = table.getId();
       return tableId === 'table-1';
     };
-    
+
     const isFromTableFirst = isFirstTable(fromTable);
     const isToTableFirst = isFirstTable(toTable);
-    
+
     const getMarkerOffset = (isMany: boolean, isFirstTable: boolean) => {
       if (isMany) {
         return MARKER_MANY_OFFSET;
@@ -128,7 +128,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       // In ONE_TO_MANY: table with primary key = ONE, table with foreign key = MANY
       let fromIsMany: boolean;
       let toIsMany: boolean;
-      
+
       if (relationshipType === 'MANY_TO_MANY') {
         fromIsMany = true;
         toIsMany = true;
@@ -143,7 +143,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         const toColumnIsPk = toColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
         const fromColumnIsFk = fromColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
         const toColumnIsFk = toColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
-        
+
         // Table with primary key = ONE (false), table with foreign key = MANY (true)
         // If column has primary key, it's ONE side; if it has foreign key, it's MANY side
         fromIsMany = fromColumnIsFk || (fromColumnIsPk ? false : true); // Default to MANY if unclear
@@ -177,7 +177,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       // In ONE_TO_MANY: table with primary key = ONE, table with foreign key = MANY
       let fromIsMany: boolean;
       let toIsMany: boolean;
-      
+
       if (relationshipType === 'MANY_TO_MANY') {
         fromIsMany = true;
         toIsMany = true;
@@ -192,7 +192,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         const toColumnIsPk = toColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
         const fromColumnIsFk = fromColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
         const toColumnIsFk = toColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
-        
+
         // Table with primary key = ONE (false), table with foreign key = MANY (true)
         // If column has primary key, it's ONE side; if it has foreign key, it's MANY side
         fromIsMany = fromColumnIsFk || (fromColumnIsPk ? false : true); // Default to MANY if unclear
@@ -287,19 +287,22 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     const relationshipType = relationship.getType();
     const fromIsMany = relationshipType === 'MANY_TO_MANY' || relationshipType === 'ONE_TO_MANY';
     const toIsMany = relationshipType === 'MANY_TO_MANY';
-    console.log(`📍 RelationshipLine ${relationship.getId()} (${fromTable.getName()} -> ${toTable.getName()}):`, {
-      relationshipType,
-      fromTablePos: `${fromPos.x}, ${fromPos.y}`,
-      toTablePos: `${toPos.x}, ${toPos.y}`,
-      pathStart: `(${pathData.pathStartX}, ${pathData.pathStartY})`,
-      pathEnd: `(${pathData.pathEndX}, ${pathData.pathEndY})`,
-      markerStart: `(${pathData.markerStartX}, ${pathData.markerStartY}) - isMany: ${fromIsMany}`,
-      markerEnd: `(${pathData.markerEndX}, ${pathData.markerEndY}) - isMany: ${toIsMany}`,
-      offsets: {
-        start: fromIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
-        end: toIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
-      },
-    });
+    console.log(
+      `📍 RelationshipLine ${relationship.getId()} (${fromTable.getName()} -> ${toTable.getName()}):`,
+      {
+        relationshipType,
+        fromTablePos: `${fromPos.x}, ${fromPos.y}`,
+        toTablePos: `${toPos.x}, ${toPos.y}`,
+        pathStart: `(${pathData.pathStartX}, ${pathData.pathStartY})`,
+        pathEnd: `(${pathData.pathEndX}, ${pathData.pathEndY})`,
+        markerStart: `(${pathData.markerStartX}, ${pathData.markerStartY}) - isMany: ${fromIsMany}`,
+        markerEnd: `(${pathData.markerEndX}, ${pathData.markerEndY}) - isMany: ${toIsMany}`,
+        offsets: {
+          start: fromIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
+          end: toIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
+        },
+      }
+    );
   }
 
   return (

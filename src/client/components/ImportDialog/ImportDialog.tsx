@@ -139,7 +139,8 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
 
       const result = parser.parse(text);
       if (!result.success || !result.data) {
-        const errorMessage = result.errors?.map(e => e.message).join('\n') || 'Failed to parse input';
+        const errorMessage =
+          result.errors?.map(e => e.message).join('\n') || 'Failed to parse input';
         setError(errorMessage);
         setIsValidating(false);
         console.error('Import parse failed:', errorMessage, result);
@@ -149,16 +150,23 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
       // Successfully parsed - import the diagram
       console.log('Import successful, diagram:', result.data);
       // Debug: Check relationships
-      const relationships = result.data.getAllRelationships();
-      console.log(`📊 Imported diagram has ${relationships.length} relationships:`, relationships.map(r => ({
-        id: r.getId(),
-        from: result.data.getTable(r.getFromTableId())?.getName(),
-        to: result.data.getTable(r.getToTableId())?.getName(),
-        type: r.getType(),
-      })));
+      if (!result.data) {
+        throw new Error('Failed to parse diagram');
+      }
+      const diagram = result.data;
+      const relationships = diagram.getAllRelationships();
+      console.log(
+        `📊 Imported diagram has ${relationships.length} relationships:`,
+        relationships.map(r => ({
+          id: r.getId(),
+          from: diagram.getTable(r.getFromTableId())?.getName(),
+          to: diagram.getTable(r.getToTableId())?.getName(),
+          type: r.getType(),
+        }))
+      );
       // Pass the original text to onImport so it can be set in editor
       const importText = mode === 'sql' ? sqlText : mode === 'json' ? undefined : undefined;
-      onImport(result.data, importText);
+      onImport(diagram, importText);
       // Reset state before closing
       setSqlText('');
       setJsonText('');

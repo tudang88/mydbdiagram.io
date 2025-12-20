@@ -177,19 +177,6 @@ export class FrontendExporter {
           .join('');
       };
 
-      // Helper function to determine if column is MANY or ONE
-      const getIsMany = (
-        relationshipType: string,
-        column: { constraints: Array<{ type: string }> }
-      ): boolean => {
-        if (relationshipType === 'MANY_TO_MANY') return true;
-        if (relationshipType === 'ONE_TO_ONE') return false;
-        // ONE_TO_MANY: column with foreign key = MANY, column with primary key = ONE
-        const hasPk = column.constraints.some(c => c.type === 'PRIMARY_KEY');
-        const hasFk = column.constraints.some(c => c.type === 'FOREIGN_KEY');
-        return hasFk || (hasPk ? false : true);
-      };
-
       // Helper function to render ONE marker
       const renderOneMarker = (x: number, y: number): string => {
         const lineLength = MARKER_SIZE * 1.5;
@@ -225,7 +212,9 @@ export class FrontendExporter {
 
         if (!fromColumn || !toColumn) return;
 
-        const fromColumnIndex = fromTable.columns.findIndex(c => c.id === relationship.fromColumnId);
+        const fromColumnIndex = fromTable.columns.findIndex(
+          c => c.id === relationship.fromColumnId
+        );
         const toColumnIndex = toTable.columns.findIndex(c => c.id === relationship.toColumnId);
 
         const fromPos = {
@@ -237,8 +226,10 @@ export class FrontendExporter {
           y: toTable.position.y - minY + padding,
         };
 
-        const fromColumnY = fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
-        const toColumnY = toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+        const fromColumnY =
+          fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+        const toColumnY =
+          toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
 
         const fromLeft = fromPos.x;
         const fromRight = fromPos.x + TABLE_WIDTH;
@@ -352,11 +343,11 @@ export class FrontendExporter {
           const colY = y + TABLE_HEADER_HEIGHT + index * COLUMN_HEIGHT;
           const constraintIcons = getConstraintIcons(column.constraints);
           const colText = `${column.name} ${column.type}${constraintIcons ? ' ' + constraintIcons : ''}`;
-          
+
           svg.push(
             `<text x="${x + 12}" y="${colY + COLUMN_HEIGHT / 2 + 4}" fill="#333" font-size="12" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(colText)}</text>`
           );
-          
+
           if (index < table.columns.length - 1) {
             svg.push(
               `<line x1="${x}" y1="${colY + COLUMN_HEIGHT}" x2="${x + TABLE_WIDTH}" y2="${colY + COLUMN_HEIGHT}" stroke="#f0f0f0" stroke-width="1"/>`

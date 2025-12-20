@@ -52,7 +52,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       // Get current editor text and format before saving
       const editorText = onGetEditorText?.();
       const editorFormat = onGetEditorFormat?.();
-      
+
       // Update diagram metadata with source text and format
       if (editorText && editorFormat) {
         diagram.setSourceText(editorText, editorFormat);
@@ -77,14 +77,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     // Debug: Check relationships before setting diagram
     const relationshipsBefore = diagram.getAllRelationships();
     console.log(`🔍 Before setDiagram: ${relationshipsBefore.length} relationships`);
-    
+
     diagramStore.setDiagram(diagram);
-    
+
     // Debug: Check relationships after setting diagram
     const diagramAfter = diagramStore.getDiagram();
     const relationshipsAfter = diagramAfter?.getAllRelationships() || [];
     console.log(`🔍 After setDiagram: ${relationshipsAfter.length} relationships`);
-    
+
     onDiagramLoaded();
     // Set text in editor if provided
     if (importText && onImportText) {
@@ -151,7 +151,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <LoadDialog
         isOpen={showLoadDialog}
         onClose={() => setShowLoadDialog(false)}
-        onLoad={(diagramText) => {
+        onLoad={diagramText => {
           onDiagramLoaded();
           // Set text in editor if provided
           if (diagramText && onImportText) {

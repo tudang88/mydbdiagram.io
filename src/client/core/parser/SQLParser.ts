@@ -351,10 +351,10 @@ export class SQLParser implements Parser<string, Diagram> {
           const fromColumn = alterTableMatch[2];
           const toTableName = alterTableMatch[3];
           const toColumn = alterTableMatch[4];
-          
+
           const fromTableId = tableNameMap.get(fromTableName.toLowerCase());
           const toTableId = tableNameMap.get(toTableName.toLowerCase());
-          
+
           if (fromTableId && toTableId) {
             // Add relationship
             relationships.push({
@@ -363,7 +363,7 @@ export class SQLParser implements Parser<string, Diagram> {
               fromColumn,
               toColumn,
             });
-            
+
             // Find the table and add FOREIGN_KEY constraint to the column
             const fromTable = tables.find(t => t.id === fromTableId);
             if (fromTable) {
@@ -379,7 +379,7 @@ export class SQLParser implements Parser<string, Diagram> {
                 }
               }
             }
-            
+
             console.log(
               `✅ Parsed ALTER TABLE relationship: ${fromTableName}.${fromColumn} -> ${toTableName}.${toColumn}`
             );

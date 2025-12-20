@@ -136,7 +136,7 @@ export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
   // Check if table position changed
   const prevPos = prevProps.table.getPosition();
   const nextPos = nextProps.table.getPosition();
-  
+
   const positionChanged = prevPos.x !== nextPos.x || prevPos.y !== nextPos.y;
 
   // If position changed, need to re-render

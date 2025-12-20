@@ -164,12 +164,12 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         // Update table position: start position + delta in canvas space
         const newX = dragStateRef.current.tableStartX + deltaXCanvas;
         const newY = dragStateRef.current.tableStartY + deltaYCanvas;
-        
+
         table.moveTo({
           x: newX,
           y: newY,
         });
-        
+
         // Force re-render to update relationship lines and table position
         setForceUpdate(prev => prev + 1);
       });
@@ -210,16 +210,13 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   );
 
   // Handle pan end
-  const handleMouseUp = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      // Only clear canvas dragging if not dragging a table
-      // Table drag end is handled by TableNode's handleMouseUp -> onDragEnd -> handleTableDragEnd
-      if (!draggedTableId) {
-        setIsDragging(false);
-      }
-    },
-    [draggedTableId]
-  );
+  const handleMouseUp = useCallback(() => {
+    // Only clear canvas dragging if not dragging a table
+    // Table drag end is handled by TableNode's handleMouseUp -> onDragEnd -> handleTableDragEnd
+    if (!draggedTableId) {
+      setIsDragging(false);
+    }
+  }, [draggedTableId]);
 
   // Handle table selection
   const handleTableSelect = useCallback(
@@ -248,7 +245,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      
+
       // CRITICAL: Set draggedTableId FIRST, then clear isDragging
       // This ensures canvas pan is immediately disabled
       setDraggedTableId(tableId);
@@ -261,7 +258,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         setDraggedTableId(null); // Clear on error
         return;
       }
-      
+
       const pos = table.getPosition();
 
       // Store mouse position in viewport coordinates (simple and direct)

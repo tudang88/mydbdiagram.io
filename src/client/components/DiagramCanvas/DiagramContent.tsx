@@ -147,7 +147,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
         const fromPos = fromTable.getPosition();
         const toPos = toTable.getPosition();
         const positionKey = `${fromPos.x},${fromPos.y}-${toPos.x},${toPos.y}`;
-        
+
         return (
           <RelationshipLine
             key={`${relationship.getId()}-${positionKey}`}

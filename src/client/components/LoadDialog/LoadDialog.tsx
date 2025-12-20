@@ -67,18 +67,18 @@ export const LoadDialog: React.FC<LoadDialogProps> = ({
       const result = await diagramService.loadDiagram(selectedId);
       if (result.success && result.data) {
         diagramStore.setDiagram(result.data);
-        
+
         // Try to load source text from metadata first, fallback to generating SQL
         const sourceText = result.data.getSourceText();
         let diagramText: string | undefined = sourceText;
-        
+
         // If no source text in metadata, generate SQL from diagram
         if (!diagramText) {
           const exporter = new FrontendExporter();
           const sqlResult = exporter.exportSQL(result.data);
           diagramText = sqlResult.success && sqlResult.data ? sqlResult.data : undefined;
         }
-        
+
         onLoad(diagramText);
         onClose();
         setSelectedId(null);
