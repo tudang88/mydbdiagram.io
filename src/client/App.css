@@ -14,8 +14,8 @@
 }
 
 .app-editor-panel {
-  width: 50%;
-  min-width: 400px;
+  width: 33.333%;
+  min-width: 300px;
   border-right: 1px solid #3e3e42;
   display: flex;
   flex-direction: column;
