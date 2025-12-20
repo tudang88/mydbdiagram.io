@@ -54,13 +54,17 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
     [isDragging, table, onDrag]
   );
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    onDragEnd();
-  }, [onDragEnd]);
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent canvas from handling this event
+      setIsDragging(false);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      onDragEnd();
+    },
+    [onDragEnd]
+  );
 
   useEffect(() => {
     return () => {

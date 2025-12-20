@@ -137,6 +137,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
       const table = diagram.getTable(dragStateRef.current.tableId);
       if (!table) {
+        console.warn('⚠️ Table not found for drag:', dragStateRef.current.tableId);
         return;
       }
 
@@ -161,12 +162,15 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         const deltaYCanvas = deltaYViewport / zoom;
 
         // Update table position: start position + delta in canvas space
+        const newX = dragStateRef.current.tableStartX + deltaXCanvas;
+        const newY = dragStateRef.current.tableStartY + deltaYCanvas;
+        
         table.moveTo({
-          x: dragStateRef.current.tableStartX + deltaXCanvas,
-          y: dragStateRef.current.tableStartY + deltaYCanvas,
+          x: newX,
+          y: newY,
         });
         
-        // Force re-render to update relationship lines
+        // Force re-render to update relationship lines and table position
         setForceUpdate(prev => prev + 1);
       });
     },
@@ -206,11 +210,16 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   );
 
   // Handle pan end
-  const handleMouseUp = useCallback(() => {
-    // Always clear canvas dragging state
-    setIsDragging(false);
-    // Note: draggedTableId will be cleared by handleTableDragEnd or document mouseup
-  }, []);
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // Only clear canvas dragging if not dragging a table
+      // Table drag end is handled by TableNode's handleMouseUp -> onDragEnd -> handleTableDragEnd
+      if (!draggedTableId) {
+        setIsDragging(false);
+      }
+    },
+    [draggedTableId]
+  );
 
   // Handle table selection
   const handleTableSelect = useCallback(
@@ -231,6 +240,15 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   // Handle table drag start
   const handleTableDragStart = useCallback(
     (tableId: string, e: React.MouseEvent) => {
+      // CRITICAL: Clear any previous drag state first to prevent conflicts
+      if (dragStateRef.current) {
+        dragStateRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      
       // CRITICAL: Set draggedTableId FIRST, then clear isDragging
       // This ensures canvas pan is immediately disabled
       setDraggedTableId(tableId);
@@ -240,6 +258,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       const table = diagramStore.getDiagram()?.getTable(tableId);
       if (!table) {
         console.warn('⚠️ Table not found for drag start:', tableId);
+        setDraggedTableId(null); // Clear on error
         return;
       }
       
@@ -254,29 +273,24 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         tableStartX: pos.x,
         tableStartY: pos.y,
       };
-      
-      console.log('🖱️ Drag start:', {
-        tableId,
-        startX: e.clientX,
-        startY: e.clientY,
-        tableStartX: pos.x,
-        tableStartY: pos.y,
-      });
     },
     [diagramStore]
   );
 
   // Handle table drag end - defined before useEffect that uses it
   const handleTableDragEnd = useCallback(() => {
-    setDraggedTableId(null);
-    dragStateRef.current = null;
-    setIsDragging(false); // Also clear canvas dragging state
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
+    // Only clear if we're actually dragging a table
+    if (draggedTableId) {
+      setDraggedTableId(null);
+      dragStateRef.current = null;
+      setIsDragging(false); // Also clear canvas dragging state
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      // Force final re-render to ensure relationship lines are updated
+      setForceUpdate(prev => prev + 1);
     }
-    // Force final re-render to ensure relationship lines are updated
-    setForceUpdate(prev => prev + 1);
-  }, []);
+  }, [draggedTableId]);
 
   // Document-level mouse move handler for continuous dragging
   useEffect(() => {
