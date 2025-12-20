@@ -256,10 +256,7 @@ This project uses GitHub Actions for continuous integration and deployment.
 ### Status Badge
 
 Add this to your README to show CI status:
-
-```markdown
-![CI](https://github.com/yourusername/mydbdiagramio/workflows/CI/badge.svg)
-```
+![CI](https://github.com/tudang88/mydbdiagramio/workflows/CI/badge.svg)
 
 ## License
 
