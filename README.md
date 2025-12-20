@@ -253,11 +253,6 @@ This project uses GitHub Actions for continuous integration and deployment.
   - Full build process
   - Artifact upload
 
-### Status Badge
-
-Add this to your README to show CI status:
-![CI](https://github.com/tudang88/mydbdiagramio/workflows/CI/badge.svg)
-
 ## License
 
 MIT
