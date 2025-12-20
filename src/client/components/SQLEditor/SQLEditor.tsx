@@ -23,6 +23,15 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
+  // Clear editor when new empty diagram is created
+  useEffect(() => {
+    // If diagram is new/empty (no tables), clear editor
+    if (diagram && diagram.getAllTables().length === 0) {
+      setSqlText('');
+      setError(null);
+    }
+  }, [diagram]);
+
   // Initialize with example SQL/DBML if editor is empty
   useEffect(() => {
     if (!sqlText && !diagram) {
