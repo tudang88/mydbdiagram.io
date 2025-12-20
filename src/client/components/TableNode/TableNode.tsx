@@ -117,14 +117,29 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
 };
 
 // Memoize TableNode to prevent unnecessary re-renders
+// But always re-render when table position changes
 export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
-  // Only re-render if these props change
-  return (
-    prevProps.table.getId() === nextProps.table.getId() &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.table.getPosition().x === nextProps.table.getPosition().x &&
-    prevProps.table.getPosition().y === nextProps.table.getPosition().y &&
-    prevProps.table.getName() === nextProps.table.getName() &&
-    prevProps.table.getAllColumns().length === nextProps.table.getAllColumns().length
-  );
+  // Always re-render if table ID, selection, name, or column count changes
+  if (
+    prevProps.table.getId() !== nextProps.table.getId() ||
+    prevProps.isSelected !== nextProps.isSelected ||
+    prevProps.table.getName() !== nextProps.table.getName() ||
+    prevProps.table.getAllColumns().length !== nextProps.table.getAllColumns().length
+  ) {
+    return false; // Props changed, need to re-render
+  }
+
+  // Check if table position changed
+  const prevPos = prevProps.table.getPosition();
+  const nextPos = nextProps.table.getPosition();
+  
+  const positionChanged = prevPos.x !== nextPos.x || prevPos.y !== nextPos.y;
+
+  // If position changed, need to re-render
+  if (positionChanged) {
+    return false;
+  }
+
+  // Props are the same, skip re-render
+  return true;
 });

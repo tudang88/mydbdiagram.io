@@ -43,9 +43,10 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   //   [viewport, draggedTableId]
   // );
 
-  // Memoize tables and relationships
-  const tables = useMemo(() => diagram.getAllTables(), [diagram]);
-  const relationships = useMemo(() => diagram.getAllRelationships(), [diagram]);
+  // Get tables and relationships - don't memoize to ensure re-render when positions change
+  // This ensures tables and relationships re-render when table positions update
+  const tables = diagram.getAllTables();
+  const relationships = diagram.getAllRelationships();
 
   // Filter tables visible in viewport (with padding for smooth scrolling)
   // TEMPORARILY DISABLE VIEWPORT FILTERING to prevent tables from disappearing
@@ -142,9 +143,14 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
           return null;
         }
 
+        // Include table positions in key to force re-render when tables move
+        const fromPos = fromTable.getPosition();
+        const toPos = toTable.getPosition();
+        const positionKey = `${fromPos.x},${fromPos.y}-${toPos.x},${toPos.y}`;
+        
         return (
           <RelationshipLine
-            key={relationship.getId()}
+            key={`${relationship.getId()}-${positionKey}`}
             relationship={relationship}
             fromTable={fromTable}
             toTable={toTable}

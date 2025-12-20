@@ -34,6 +34,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedTableId, setDraggedTableId] = useState<string | null>(null);
+  const [forceUpdate, setForceUpdate] = useState(0); // Force re-render when table moves
   const [contextMenu, setContextMenu] = useState<{
     isOpen: boolean;
     position: { x: number; y: number };
@@ -164,6 +165,9 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           x: dragStateRef.current.tableStartX + deltaXCanvas,
           y: dragStateRef.current.tableStartY + deltaYCanvas,
         });
+        
+        // Force re-render to update relationship lines
+        setForceUpdate(prev => prev + 1);
       });
     },
     [diagram, uiStore]
@@ -234,22 +238,45 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
       // Store initial drag state for smooth calculation
       const table = diagramStore.getDiagram()?.getTable(tableId);
-      if (table) {
-        const pos = table.getPosition();
-
-        // Store mouse position in viewport coordinates (simple and direct)
-        // We'll calculate delta in viewport and convert to canvas space during drag
-        dragStateRef.current = {
-          tableId,
-          startX: e.clientX,
-          startY: e.clientY,
-          tableStartX: pos.x,
-          tableStartY: pos.y,
-        };
+      if (!table) {
+        console.warn('⚠️ Table not found for drag start:', tableId);
+        return;
       }
+      
+      const pos = table.getPosition();
+
+      // Store mouse position in viewport coordinates (simple and direct)
+      // We'll calculate delta in viewport and convert to canvas space during drag
+      dragStateRef.current = {
+        tableId,
+        startX: e.clientX,
+        startY: e.clientY,
+        tableStartX: pos.x,
+        tableStartY: pos.y,
+      };
+      
+      console.log('🖱️ Drag start:', {
+        tableId,
+        startX: e.clientX,
+        startY: e.clientY,
+        tableStartX: pos.x,
+        tableStartY: pos.y,
+      });
     },
     [diagramStore]
   );
+
+  // Handle table drag end - defined before useEffect that uses it
+  const handleTableDragEnd = useCallback(() => {
+    setDraggedTableId(null);
+    dragStateRef.current = null;
+    setIsDragging(false); // Also clear canvas dragging state
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    // Force final re-render to ensure relationship lines are updated
+    setForceUpdate(prev => prev + 1);
+  }, []);
 
   // Document-level mouse move handler for continuous dragging
   useEffect(() => {
@@ -263,12 +290,8 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
     const handleDocumentMouseUp = () => {
       if (draggedTableId) {
-        setDraggedTableId(null);
-        dragStateRef.current = null;
-        setIsDragging(false); // Also clear canvas dragging state
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
+        // Call handleTableDragEnd to ensure cleanup and force re-render
+        handleTableDragEnd();
       }
     };
 
@@ -279,7 +302,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       document.removeEventListener('mousemove', handleDocumentMouseMove);
       document.removeEventListener('mouseup', handleDocumentMouseUp);
     };
-  }, [draggedTableId, handleTableDragInternal]);
+  }, [draggedTableId, handleTableDragInternal, handleTableDragEnd]);
 
   // Handle table drag (called from TableNode)
   const handleTableDrag = useCallback(
@@ -288,16 +311,6 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     },
     [handleTableDragInternal]
   );
-
-  // Handle table drag end
-  const handleTableDragEnd = useCallback(() => {
-    setDraggedTableId(null);
-    dragStateRef.current = null;
-    setIsDragging(false); // Also clear canvas dragging state
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-  }, []);
 
   // Show table context menu
   const showTableContextMenu = useCallback(
@@ -506,6 +519,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       >
         {diagram && (
           <DiagramContent
+            key={`diagram-${forceUpdate}`} // Force re-render when forceUpdate changes
             diagram={diagram}
             uiState={uiState}
             viewport={{

@@ -14,11 +14,19 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   fromTable,
   toTable,
 }) => {
-  // Memoize position calculations
-  const fromPos = useMemo(() => fromTable.getPosition(), [fromTable]);
-  const toPos = useMemo(() => toTable.getPosition(), [toTable]);
+  // Get positions - recalculate when table positions change
+  // Use getPosition() directly to ensure we always get latest position
+  const fromPos = fromTable.getPosition();
+  const toPos = toTable.getPosition();
+  
+  // Extract position values for dependency tracking
+  const fromX = fromPos.x;
+  const fromY = fromPos.y;
+  const toX = toPos.x;
+  const toY = toPos.y;
 
   // Calculate orthogonal path (right-angle routing) from column positions (like dbdiagram.io)
+  // Include position keys in dependencies to ensure recalculation when table moves
   const pathData = useMemo(() => {
     // Get table dimensions - use actual table dimensions
     const TABLE_WIDTH = 200; // Standard table width
@@ -147,7 +155,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         endDirection: 'right' as const, // Marker points to the right (away from table)
       };
     }
-  }, [fromPos, toPos, fromTable, toTable, relationship]);
+  }, [fromX, fromY, toX, toY, fromTable, toTable, relationship]);
 
   // Memoize relationship type styling
   const lineStyle = useMemo(() => {
@@ -290,19 +298,33 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
 };
 
 // Memoize RelationshipLine to prevent unnecessary re-renders
+// But always re-render when table positions change
 export const RelationshipLine = memo(RelationshipLineComponent, (prevProps, nextProps) => {
-  // Only re-render if these props change
+  // Always re-render if relationship ID or type changes
+  if (
+    prevProps.relationship.getId() !== nextProps.relationship.getId() ||
+    prevProps.relationship.getType() !== nextProps.relationship.getType()
+  ) {
+    return false; // Props changed, need to re-render
+  }
+
+  // Check if table positions changed
   const prevFromPos = prevProps.fromTable.getPosition();
   const nextFromPos = nextProps.fromTable.getPosition();
   const prevToPos = prevProps.toTable.getPosition();
   const nextToPos = nextProps.toTable.getPosition();
 
-  return (
-    prevProps.relationship.getId() === nextProps.relationship.getId() &&
-    prevFromPos.x === nextFromPos.x &&
-    prevFromPos.y === nextFromPos.y &&
-    prevToPos.x === nextToPos.x &&
-    prevToPos.y === nextToPos.y &&
-    prevProps.relationship.getType() === nextProps.relationship.getType()
-  );
+  const positionsChanged =
+    prevFromPos.x !== nextFromPos.x ||
+    prevFromPos.y !== nextFromPos.y ||
+    prevToPos.x !== nextToPos.x ||
+    prevToPos.y !== nextToPos.y;
+
+  // If positions changed, need to re-render
+  if (positionsChanged) {
+    return false;
+  }
+
+  // Props are the same, skip re-render
+  return true;
 });
