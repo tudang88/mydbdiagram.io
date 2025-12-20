@@ -32,7 +32,12 @@ export class SQLParser implements Parser<string, Diagram> {
 
       const diagram = Diagram.fromJSON(diagramData);
 
-      // Add relationships after diagram is created
+      // Step 1: Add all relationships as ONE_TO_MANY first
+      const parsedRelationships: Array<{
+        relationship: Relationship;
+        rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+      }> = [];
+
       relationships.forEach((rel, index) => {
         const fromTable = diagram.getTable(rel.fromTable);
         const toTable = diagram.getTable(rel.toTable);
@@ -50,14 +55,54 @@ export class SQLParser implements Parser<string, Diagram> {
                 'ONE_TO_MANY',
                 false
               );
-              diagram.addRelationship(relationship);
-              console.log(
-                `✅ Created relationship ${index + 1}: ${fromTable.getName()}.${fromColumn.name} -> ${toTable.getName()}.${toColumn.name}`
-              );
+              parsedRelationships.push({ relationship, rawRel: rel });
             } catch (err) {
               console.error('❌ Failed to create relationship:', err, rel);
             }
           }
+        }
+      });
+
+      // Step 2: Detect MANY_TO_MANY relationships from junction tables
+      const manyToManyRelationships = this.detectManyToManyRelationships(
+        diagram,
+        parsedRelationships
+      );
+
+      // Step 3: Add relationships to diagram (excluding junction table relationships that are part of MANY_TO_MANY)
+      const junctionTableIds = new Set(
+        manyToManyRelationships.map(rel => rel.junctionTableId).filter(Boolean)
+      );
+
+      parsedRelationships.forEach(({ relationship, rawRel }) => {
+        // Skip relationships from junction tables that are part of MANY_TO_MANY
+        if (junctionTableIds.has(rawRel.fromTable)) {
+          return;
+        }
+        diagram.addRelationship(relationship);
+        console.log(
+          `✅ Created relationship: ${diagram.getTable(relationship.getFromTableId())?.getName()}.${rawRel.fromColumn} -> ${diagram.getTable(relationship.getToTableId())?.getName()}.${rawRel.toColumn}`
+        );
+      });
+
+      // Step 4: Add MANY_TO_MANY relationships
+      manyToManyRelationships.forEach(({ fromTableId, toTableId, fromColumnId, toColumnId }) => {
+        try {
+          const manyToManyRel = new Relationship(
+            `rel-many-to-many-${Date.now()}-${Math.random()}`,
+            fromTableId,
+            fromColumnId,
+            toTableId,
+            toColumnId,
+            'MANY_TO_MANY',
+            false
+          );
+          diagram.addRelationship(manyToManyRel);
+          console.log(
+            `✅ Created MANY_TO_MANY relationship: ${diagram.getTable(fromTableId)?.getName()} <-> ${diagram.getTable(toTableId)?.getName()}`
+          );
+        } catch (err) {
+          console.error('❌ Failed to create MANY_TO_MANY relationship:', err);
         }
       });
 
@@ -166,8 +211,8 @@ export class SQLParser implements Parser<string, Diagram> {
           };
         }
       }
-      // FOREIGN KEY definition (standalone or inline)
-      else if (upperLine.includes('FOREIGN KEY') || upperLine.includes('REFERENCES')) {
+      // FOREIGN KEY definition (standalone only, inline is handled in column definition)
+      else if (upperLine.startsWith('FOREIGN KEY')) {
         if (currentTable) {
           // Parse FOREIGN KEY (column_name) REFERENCES table_name(column_name)
           const fkMatch = line.match(
@@ -185,24 +230,12 @@ export class SQLParser implements Parser<string, Diagram> {
                 fromColumn,
                 toColumn,
               });
-            }
-          }
-          // Parse inline: column_name TYPE REFERENCES table_name(column_name)
-          else {
-            const inlineFkMatch = line.match(
-              /[`"]?(\w+)[`"]?\s+\w+(?:\([^)]+\))?\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
-            );
-            if (inlineFkMatch) {
-              const fromColumn = inlineFkMatch[1];
-              const toTableName = inlineFkMatch[2];
-              const toColumn = inlineFkMatch[3];
-              const toTableId = tableNameMap.get(toTableName.toLowerCase());
-              if (toTableId && currentTable.id) {
-                relationships.push({
-                  fromTable: currentTable.id,
-                  toTable: toTableId,
-                  fromColumn,
-                  toColumn,
+              // Add FOREIGN_KEY constraint to the column
+              const column = currentTable.columns?.find(c => c.name === fromColumn);
+              if (column) {
+                column.constraints.push({
+                  type: 'FOREIGN_KEY',
+                  value: `${toTableName}.${toColumn}`,
                 });
               }
             }
@@ -216,14 +249,18 @@ export class SQLParser implements Parser<string, Diagram> {
         !upperLine.startsWith('PRIMARY KEY') &&
         !upperLine.startsWith('FOREIGN KEY') &&
         !upperLine.startsWith('CONSTRAINT') &&
-        !line.startsWith(')') &&
-        !upperLine.includes('REFERENCES')
+        !line.startsWith(')')
       ) {
-        const columnMatch = line.match(/[`"]?(\w+)[`"]?\s+(\w+(?:\([^)]+\))?)/i);
-        if (columnMatch) {
-          columnIdCounter++;
-          const columnName = columnMatch[1];
-          const columnType = columnMatch[2];
+        // Check for inline FOREIGN KEY: column_name TYPE REFERENCES table_name(column_name)
+        const inlineFkMatch = line.match(
+          /[`"]?(\w+)[`"]?\s+(\w+(?:\([^)]+\))?)\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
+        );
+        if (inlineFkMatch) {
+          const columnName = inlineFkMatch[1];
+          const columnType = inlineFkMatch[2];
+          const toTableName = inlineFkMatch[3];
+          const toColumn = inlineFkMatch[4];
+          const toTableId = tableNameMap.get(toTableName.toLowerCase());
           const constraints: Array<{ type: ConstraintType; value?: string }> = [];
 
           // Check for constraints
@@ -239,13 +276,59 @@ export class SQLParser implements Parser<string, Diagram> {
           if (upperLine.includes('AUTO_INCREMENT') || upperLine.includes('AUTOINCREMENT')) {
             constraints.push({ type: 'AUTO_INCREMENT' });
           }
+          // Add FOREIGN_KEY constraint
+          constraints.push({
+            type: 'FOREIGN_KEY',
+            value: `${toTableName}.${toColumn}`,
+          });
 
+          columnIdCounter++;
           currentTable.columns!.push({
             id: `col-${columnIdCounter}`,
             name: columnName,
             type: columnType,
             constraints,
           });
+
+          // Add relationship
+          if (toTableId && currentTable.id) {
+            relationships.push({
+              fromTable: currentTable.id,
+              toTable: toTableId,
+              fromColumn: columnName,
+              toColumn,
+            });
+          }
+        } else {
+          // Regular column without inline FOREIGN KEY
+          const columnMatch = line.match(/[`"]?(\w+)[`"]?\s+(\w+(?:\([^)]+\))?)/i);
+          if (columnMatch) {
+            columnIdCounter++;
+            const columnName = columnMatch[1];
+            const columnType = columnMatch[2];
+            const constraints: Array<{ type: ConstraintType; value?: string }> = [];
+
+            // Check for constraints
+            if (upperLine.includes('PRIMARY KEY')) {
+              constraints.push({ type: 'PRIMARY_KEY' });
+            }
+            if (upperLine.includes('NOT NULL')) {
+              constraints.push({ type: 'NOT_NULL' });
+            }
+            if (upperLine.includes('UNIQUE')) {
+              constraints.push({ type: 'UNIQUE' });
+            }
+            if (upperLine.includes('AUTO_INCREMENT') || upperLine.includes('AUTOINCREMENT')) {
+              constraints.push({ type: 'AUTO_INCREMENT' });
+            }
+
+            currentTable.columns!.push({
+              id: `col-${columnIdCounter}`,
+              name: columnName,
+              type: columnType,
+              constraints,
+            });
+          }
         }
       }
       // End of table definition
@@ -275,5 +358,119 @@ export class SQLParser implements Parser<string, Diagram> {
       position: table.position || { x: 0, y: 0 },
       columns: table.columns || [],
     };
+  }
+
+  /**
+   * Detect MANY_TO_MANY relationships from junction table pattern
+   * Junction table pattern:
+   * - Has exactly 2 foreign keys
+   * - Both foreign keys are primary keys (composite key)
+   * - Has 2 relationships: one to table A, one to table B
+   * - Result: MANY_TO_MANY between table A and table B
+   */
+  private detectManyToManyRelationships(
+    diagram: Diagram,
+    parsedRelationships: Array<{
+      relationship: Relationship;
+      rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+    }>
+  ): Array<{
+    fromTableId: string;
+    toTableId: string;
+    fromColumnId: string;
+    toColumnId: string;
+    junctionTableId?: string;
+  }> {
+    const manyToManyRelationships: Array<{
+      fromTableId: string;
+      toTableId: string;
+      fromColumnId: string;
+      toColumnId: string;
+      junctionTableId?: string;
+    }> = [];
+
+    // Group relationships by fromTable (junction table)
+    const relationshipsByJunctionTable = new Map<
+      string,
+      Array<{
+        relationship: Relationship;
+        rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+      }>
+    >();
+
+    parsedRelationships.forEach(parsedRel => {
+      const junctionTableId = parsedRel.rawRel.fromTable;
+      if (!relationshipsByJunctionTable.has(junctionTableId)) {
+        relationshipsByJunctionTable.set(junctionTableId, []);
+      }
+      relationshipsByJunctionTable.get(junctionTableId)!.push(parsedRel);
+    });
+
+    // Check each potential junction table
+    relationshipsByJunctionTable.forEach((rels, junctionTableId) => {
+      // Must have exactly 2 relationships from this table
+      if (rels.length !== 2) {
+        return;
+      }
+
+      const junctionTable = diagram.getTable(junctionTableId);
+      if (!junctionTable) {
+        return;
+      }
+
+      // Check if junction table has 2 foreign keys that are both primary keys
+      const columns = junctionTable.getAllColumns();
+      const foreignKeyColumns = columns.filter(col =>
+        col.constraints.some(c => c.type === 'FOREIGN_KEY')
+      );
+
+      // Must have exactly 2 foreign keys
+      if (foreignKeyColumns.length !== 2) {
+        return;
+      }
+
+      // Check if both foreign keys are also primary keys (composite key pattern)
+      const primaryKeyColumns = columns.filter(col =>
+        col.constraints.some(c => c.type === 'PRIMARY_KEY')
+      );
+
+      // Both foreign keys should be primary keys (typical junction table pattern)
+      const bothArePrimaryKeys = foreignKeyColumns.every(fkCol =>
+        fkCol.constraints.some(c => c.type === 'PRIMARY_KEY')
+      );
+
+      if (bothArePrimaryKeys && primaryKeyColumns.length === 2) {
+        // This is a junction table! Create MANY_TO_MANY between the two target tables
+        const [rel1, rel2] = rels;
+        const table1Id = rel1.rawRel.toTable;
+        const table2Id = rel2.rawRel.toTable;
+
+        // Get the primary key columns from target tables
+        const table1 = diagram.getTable(table1Id);
+        const table2 = diagram.getTable(table2Id);
+
+        if (table1 && table2) {
+          const table1Pk = table1
+            .getAllColumns()
+            .find(col => col.constraints.some(c => c.type === 'PRIMARY_KEY'));
+          const table2Pk = table2
+            .getAllColumns()
+            .find(col => col.constraints.some(c => c.type === 'PRIMARY_KEY'));
+
+          if (table1Pk && table2Pk) {
+            // Create MANY_TO_MANY relationship
+            manyToManyRelationships.push({
+              fromTableId: table1Id,
+              toTableId: table2Id,
+              fromColumnId: table1Pk.id,
+              toColumnId: table2Pk.id,
+              junctionTableId,
+            });
+          }
+        }
+      }
+    });
+
+    return manyToManyRelationships;
   }
 }

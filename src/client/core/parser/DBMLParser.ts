@@ -34,7 +34,12 @@ export class DBMLParser implements Parser<string, Diagram> {
 
       const diagram = Diagram.fromJSON(diagramData);
 
-      // Add relationships after diagram is created
+      // Step 1: Add all relationships as ONE_TO_MANY first
+      const parsedRelationships: Array<{
+        relationship: Relationship;
+        rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+      }> = [];
+
       relationships.forEach((rel, index) => {
         const fromTable = diagram.getTable(rel.fromTable);
         const toTable = diagram.getTable(rel.toTable);
@@ -52,10 +57,7 @@ export class DBMLParser implements Parser<string, Diagram> {
                 'ONE_TO_MANY',
                 false
               );
-              diagram.addRelationship(relationship);
-              console.log(
-                `✅ Created relationship ${index + 1}: ${fromTable.getName()}.${fromColumn.name} -> ${toTable.getName()}.${toColumn.name}`
-              );
+              parsedRelationships.push({ relationship, rawRel: rel });
             } catch (err) {
               console.error('❌ Failed to create relationship:', err, rel);
             }
@@ -77,6 +79,49 @@ export class DBMLParser implements Parser<string, Diagram> {
               diagram.getAllTables().map(t => ({ id: t.getId(), name: t.getName() }))
             ),
           });
+        }
+      });
+
+      // Step 2: Detect MANY_TO_MANY relationships from junction tables
+      const manyToManyRelationships = this.detectManyToManyRelationships(
+        diagram,
+        parsedRelationships
+      );
+
+      // Step 3: Add relationships to diagram (excluding junction table relationships that are part of MANY_TO_MANY)
+      const junctionTableIds = new Set(
+        manyToManyRelationships.map(rel => rel.junctionTableId).filter(Boolean)
+      );
+
+      parsedRelationships.forEach(({ relationship, rawRel }) => {
+        // Skip relationships from junction tables that are part of MANY_TO_MANY
+        if (junctionTableIds.has(rawRel.fromTable)) {
+          return;
+        }
+        diagram.addRelationship(relationship);
+        console.log(
+          `✅ Created relationship: ${diagram.getTable(relationship.getFromTableId())?.getName()}.${rawRel.fromColumn} -> ${diagram.getTable(relationship.getToTableId())?.getName()}.${rawRel.toColumn}`
+        );
+      });
+
+      // Step 4: Add MANY_TO_MANY relationships
+      manyToManyRelationships.forEach(({ fromTableId, toTableId, fromColumnId, toColumnId }) => {
+        try {
+          const manyToManyRel = new Relationship(
+            `rel-many-to-many-${Date.now()}-${Math.random()}`,
+            fromTableId,
+            fromColumnId,
+            toTableId,
+            toColumnId,
+            'MANY_TO_MANY',
+            false
+          );
+          diagram.addRelationship(manyToManyRel);
+          console.log(
+            `✅ Created MANY_TO_MANY relationship: ${diagram.getTable(fromTableId)?.getName()} <-> ${diagram.getTable(toTableId)?.getName()}`
+          );
+        } catch (err) {
+          console.error('❌ Failed to create MANY_TO_MANY relationship:', err);
         }
       });
 
@@ -289,5 +334,110 @@ export class DBMLParser implements Parser<string, Diagram> {
       position: table.position || { x: 0, y: 0 },
       columns: table.columns || [],
     };
+  }
+
+  /**
+   * Detect MANY_TO_MANY relationships from junction table pattern
+   * Junction table pattern:
+   * - Has exactly 2 relationships from this table to 2 different tables
+   * - Both relationship columns are primary keys (composite key pattern)
+   * - Result: MANY_TO_MANY between the two target tables
+   */
+  private detectManyToManyRelationships(
+    diagram: Diagram,
+    parsedRelationships: Array<{
+      relationship: Relationship;
+      rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+    }>
+  ): Array<{
+    fromTableId: string;
+    toTableId: string;
+    fromColumnId: string;
+    toColumnId: string;
+    junctionTableId?: string;
+  }> {
+    const manyToManyRelationships: Array<{
+      fromTableId: string;
+      toTableId: string;
+      fromColumnId: string;
+      toColumnId: string;
+      junctionTableId?: string;
+    }> = [];
+
+    // Group relationships by fromTable (junction table)
+    const relationshipsByJunctionTable = new Map<
+      string,
+      Array<{
+        relationship: Relationship;
+        rawRel: { fromTable: string; toTable: string; fromColumn: string; toColumn: string };
+      }>
+    >();
+
+    parsedRelationships.forEach(parsedRel => {
+      const junctionTableId = parsedRel.rawRel.fromTable;
+      if (!relationshipsByJunctionTable.has(junctionTableId)) {
+        relationshipsByJunctionTable.set(junctionTableId, []);
+      }
+      relationshipsByJunctionTable.get(junctionTableId)!.push(parsedRel);
+    });
+
+    // Check each potential junction table
+    relationshipsByJunctionTable.forEach((rels, junctionTableId) => {
+      // Must have exactly 2 relationships from this table
+      if (rels.length !== 2) {
+        return;
+      }
+
+      const junctionTable = diagram.getTable(junctionTableId);
+      if (!junctionTable) {
+        return;
+      }
+
+      // Get the columns used in relationships
+      const [rel1, rel2] = rels;
+      const rel1Column = junctionTable.getAllColumns().find(c => c.name === rel1.rawRel.fromColumn);
+      const rel2Column = junctionTable.getAllColumns().find(c => c.name === rel2.rawRel.fromColumn);
+
+      if (!rel1Column || !rel2Column) {
+        return;
+      }
+
+      // Check if both relationship columns are primary keys (composite key pattern)
+      const rel1IsPk = rel1Column.constraints.some(c => c.type === 'PRIMARY_KEY');
+      const rel2IsPk = rel2Column.constraints.some(c => c.type === 'PRIMARY_KEY');
+
+      // Both columns should be primary keys (typical junction table pattern)
+      if (rel1IsPk && rel2IsPk) {
+        // This is a junction table! Create MANY_TO_MANY between the two target tables
+        const table1Id = rel1.rawRel.toTable;
+        const table2Id = rel2.rawRel.toTable;
+
+        // Get the primary key columns from target tables
+        const table1 = diagram.getTable(table1Id);
+        const table2 = diagram.getTable(table2Id);
+
+        if (table1 && table2) {
+          const table1Pk = table1
+            .getAllColumns()
+            .find(col => col.constraints.some(c => c.type === 'PRIMARY_KEY'));
+          const table2Pk = table2
+            .getAllColumns()
+            .find(col => col.constraints.some(c => c.type === 'PRIMARY_KEY'));
+
+          if (table1Pk && table2Pk) {
+            // Create MANY_TO_MANY relationship
+            manyToManyRelationships.push({
+              fromTableId: table1Id,
+              toTableId: table2Id,
+              fromColumnId: table1Pk.id,
+              toColumnId: table2Pk.id,
+              junctionTableId,
+            });
+          }
+        }
+      }
+    });
+
+    return manyToManyRelationships;
   }
 }

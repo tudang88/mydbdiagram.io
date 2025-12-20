@@ -383,40 +383,94 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   }, [uiState.selectedTableId, onTableDelete, onTableAdd]);
 
   // Render grid
-  const renderGrid = () => {
+  const renderGrid = useMemo(() => {
     if (!uiState.showGrid) return null;
 
     const gridSize = 20;
     const { x: panX, y: panY } = uiState.panOffset;
     const zoom = uiState.zoomLevel;
 
-    const lines = [];
-    const startX = Math.floor(panX / (gridSize * zoom)) * gridSize;
-    const startY = Math.floor(panY / (gridSize * zoom)) * gridSize;
-    const endX = startX + window.innerWidth / zoom + gridSize;
-    const endY = startY + window.innerHeight / zoom + gridSize;
+    // Calculate bounds from all tables
+    const TABLE_WIDTH = 200;
+    const TABLE_HEADER_HEIGHT = 40;
+    const COLUMN_HEIGHT = 30;
 
-    for (let x = startX; x < endX; x += gridSize) {
+    let minX = 0;
+    let minY = 0;
+    let maxX = window.innerWidth;
+    let maxY = window.innerHeight;
+
+    if (diagram) {
+      const tables = diagram.getAllTables();
+      if (tables.length > 0) {
+        minX = Infinity;
+        minY = Infinity;
+        maxX = -Infinity;
+        maxY = -Infinity;
+
+        tables.forEach(table => {
+          const pos = table.getPosition();
+          const columnCount = table.getAllColumns().length;
+          const tableHeight = TABLE_HEADER_HEIGHT + columnCount * COLUMN_HEIGHT;
+
+          minX = Math.min(minX, pos.x);
+          minY = Math.min(minY, pos.y);
+          maxX = Math.max(maxX, pos.x + TABLE_WIDTH);
+          maxY = Math.max(maxY, pos.y + tableHeight);
+        });
+
+        // Add padding to ensure grid covers all tables with some margin
+        const padding = 500;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+      }
+    }
+
+    // Also consider viewport bounds
+    const viewportStartX = -panX / zoom;
+    const viewportStartY = -panY / zoom;
+    const viewportEndX = viewportStartX + window.innerWidth / zoom;
+    const viewportEndY = viewportStartY + window.innerHeight / zoom;
+
+    // Use the union of table bounds and viewport bounds
+    const startX = Math.min(minX, viewportStartX);
+    const startY = Math.min(minY, viewportStartY);
+    const endX = Math.max(maxX, viewportEndX);
+    const endY = Math.max(maxY, viewportEndY);
+
+    // Align to grid
+    const gridStartX = Math.floor(startX / gridSize) * gridSize;
+    const gridStartY = Math.floor(startY / gridSize) * gridSize;
+    const gridEndX = Math.ceil(endX / gridSize) * gridSize;
+    const gridEndY = Math.ceil(endY / gridSize) * gridSize;
+
+    const lines = [];
+
+    // Vertical lines
+    for (let x = gridStartX; x <= gridEndX; x += gridSize) {
       lines.push(
         <line
           key={`v-${x}`}
           x1={x}
-          y1={startY}
+          y1={gridStartY}
           x2={x}
-          y2={endY}
+          y2={gridEndY}
           stroke="#e0e0e0"
           strokeWidth={1 / zoom}
         />
       );
     }
 
-    for (let y = startY; y < endY; y += gridSize) {
+    // Horizontal lines
+    for (let y = gridStartY; y <= gridEndY; y += gridSize) {
       lines.push(
         <line
           key={`h-${y}`}
-          x1={startX}
+          x1={gridStartX}
           y1={y}
-          x2={endX}
+          x2={gridEndX}
           y2={y}
           stroke="#e0e0e0"
           strokeWidth={1 / zoom}
@@ -429,7 +483,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         <g transform={`translate(${panX}, ${panY}) scale(${zoom})`}>{lines}</g>
       </svg>
     );
-  };
+  }, [uiState.showGrid, uiState.panOffset, uiState.zoomLevel, diagram]);
 
   return (
     <div
@@ -442,7 +496,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       onMouseLeave={handleMouseUp}
       onContextMenu={e => e.preventDefault()}
     >
-      {renderGrid()}
+      {renderGrid}
       <div
         className="canvas-content"
         style={{
