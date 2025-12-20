@@ -18,176 +18,105 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   const fromPos = useMemo(() => fromTable.getPosition(), [fromTable]);
   const toPos = useMemo(() => toTable.getPosition(), [toTable]);
 
-  // Calculate line endpoints (edge to edge) - find shortest path
+  // Calculate line endpoints from column positions (like dbdiagram.io)
   const lineCoords = useMemo(() => {
     // Get table dimensions - use actual table dimensions
     const TABLE_WIDTH = 200; // Standard table width
     const TABLE_HEADER_HEIGHT = 40;
     const COLUMN_HEIGHT = 30;
 
+    // Get the specific columns involved in this relationship
+    const fromColumnId = relationship.getFromColumnId();
+    const toColumnId = relationship.getToColumnId();
+
+    // Get all columns to find the index of the relationship columns
     const fromColumns = fromTable.getAllColumns();
     const toColumns = toTable.getAllColumns();
 
-    const fromHeight = TABLE_HEADER_HEIGHT + fromColumns.length * COLUMN_HEIGHT;
-    const toHeight = TABLE_HEADER_HEIGHT + toColumns.length * COLUMN_HEIGHT;
+    // Find the index of the fromColumn and toColumn
+    const fromColumnIndex = fromColumns.findIndex(col => col.id === fromColumnId);
+    const toColumnIndex = toColumns.findIndex(col => col.id === toColumnId);
 
-    // Define table boundaries
+    // If columns not found, fallback to center of table
+    if (fromColumnIndex === -1 || toColumnIndex === -1) {
+      const fromHeight = TABLE_HEADER_HEIGHT + fromColumns.length * COLUMN_HEIGHT;
+      const toHeight = TABLE_HEADER_HEIGHT + toColumns.length * COLUMN_HEIGHT;
+      return {
+        fromX: fromPos.x + TABLE_WIDTH / 2,
+        fromY: fromPos.y + fromHeight / 2,
+        toX: toPos.x + TABLE_WIDTH / 2,
+        toY: toPos.y + toHeight / 2,
+      };
+    }
+
+    // Calculate Y position of the column (center of the column row)
+    // Y = table top + header height + (column index * column height) + (column height / 2)
+    const fromColumnY =
+      fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+    const toColumnY =
+      toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+
+    // Calculate table boundaries
     const fromLeft = fromPos.x;
     const fromRight = fromPos.x + TABLE_WIDTH;
     const fromTop = fromPos.y;
-    const fromBottom = fromPos.y + fromHeight;
+    const fromBottom = fromPos.y + TABLE_HEADER_HEIGHT + fromColumns.length * COLUMN_HEIGHT;
 
     const toLeft = toPos.x;
     const toRight = toPos.x + TABLE_WIDTH;
     const toTop = toPos.y;
-    const toBottom = toPos.y + toHeight;
+    const toBottom = toPos.y + TABLE_HEADER_HEIGHT + toColumns.length * COLUMN_HEIGHT;
 
-    // Calculate center points for reference
+    // Determine which edge to connect from/to based on table positions
+    // Calculate relative positions to determine best edge
     const fromCenterX = fromPos.x + TABLE_WIDTH / 2;
-    const fromCenterY = fromPos.y + fromHeight / 2;
     const toCenterX = toPos.x + TABLE_WIDTH / 2;
-    const toCenterY = toPos.y + toHeight / 2;
 
-    // Helper function to calculate distance between two points
-    const distance = (x1: number, y1: number, x2: number, y2: number) => {
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      return Math.sqrt(dx * dx + dy * dy);
-    };
+    // Determine connection points: use left or right edge based on table positions
+    let fromX: number;
+    let toX: number;
 
-    // Helper function to find closest point on a line segment to a point
-    const closestPointOnSegment = (
-      px: number,
-      py: number,
-      x1: number,
-      y1: number,
-      x2: number,
-      y2: number
-    ) => {
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const length2 = dx * dx + dy * dy;
+    // If fromTable is to the left of toTable, connect from right edge of fromTable to left edge of toTable
+    if (fromCenterX < toCenterX) {
+      fromX = fromRight;
+      toX = toLeft;
+    } else {
+      // If fromTable is to the right of toTable, connect from left edge of fromTable to right edge of toTable
+      fromX = fromLeft;
+      toX = toRight;
+    }
 
-      if (length2 === 0) {
-        return { x: x1, y: y1 };
-      }
+    // If tables are vertically aligned, prefer top/bottom edges
+    const verticalDistance = Math.abs(fromColumnY - toColumnY);
+    const horizontalDistance = Math.abs(fromCenterX - toCenterX);
 
-      const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / length2));
-      return { x: x1 + t * dx, y: y1 + t * dy };
-    };
-
-    // Generate candidate points on fromTable edges
-    const fromCandidates: Array<{ x: number; y: number }> = [];
-
-    // Left edge
-    const fromLeftPoint = closestPointOnSegment(
-      toCenterX,
-      toCenterY,
-      fromLeft,
-      fromTop,
-      fromLeft,
-      fromBottom
-    );
-    fromCandidates.push(fromLeftPoint);
-
-    // Right edge
-    const fromRightPoint = closestPointOnSegment(
-      toCenterX,
-      toCenterY,
-      fromRight,
-      fromTop,
-      fromRight,
-      fromBottom
-    );
-    fromCandidates.push(fromRightPoint);
-
-    // Top edge
-    const fromTopPoint = closestPointOnSegment(
-      toCenterX,
-      toCenterY,
-      fromLeft,
-      fromTop,
-      fromRight,
-      fromTop
-    );
-    fromCandidates.push(fromTopPoint);
-
-    // Bottom edge
-    const fromBottomPoint = closestPointOnSegment(
-      toCenterX,
-      toCenterY,
-      fromLeft,
-      fromBottom,
-      fromRight,
-      fromBottom
-    );
-    fromCandidates.push(fromBottomPoint);
-
-    // Generate candidate points on toTable edges
-    const toCandidates: Array<{ x: number; y: number }> = [];
-
-    // Left edge
-    const toLeftPoint = closestPointOnSegment(
-      fromCenterX,
-      fromCenterY,
-      toLeft,
-      toTop,
-      toLeft,
-      toBottom
-    );
-    toCandidates.push(toLeftPoint);
-
-    // Right edge
-    const toRightPoint = closestPointOnSegment(
-      fromCenterX,
-      fromCenterY,
-      toRight,
-      toTop,
-      toRight,
-      toBottom
-    );
-    toCandidates.push(toRightPoint);
-
-    // Top edge
-    const toTopPoint = closestPointOnSegment(
-      fromCenterX,
-      fromCenterY,
-      toLeft,
-      toTop,
-      toRight,
-      toTop
-    );
-    toCandidates.push(toTopPoint);
-
-    // Bottom edge
-    const toBottomPoint = closestPointOnSegment(
-      fromCenterX,
-      fromCenterY,
-      toLeft,
-      toBottom,
-      toRight,
-      toBottom
-    );
-    toCandidates.push(toBottomPoint);
-
-    // Find the shortest path by trying all combinations
-    let shortestDistance = Infinity;
-    let bestFrom = { x: fromCenterX, y: fromCenterY };
-    let bestTo = { x: toCenterX, y: toCenterY };
-
-    for (const fromPoint of fromCandidates) {
-      for (const toPoint of toCandidates) {
-        const dist = distance(fromPoint.x, fromPoint.y, toPoint.x, toPoint.y);
-        if (dist < shortestDistance) {
-          shortestDistance = dist;
-          bestFrom = fromPoint;
-          bestTo = toPoint;
-        }
+    // If vertical distance is much larger than horizontal, use top/bottom edges
+    if (verticalDistance > horizontalDistance * 1.5) {
+      if (fromColumnY < toColumnY) {
+        // fromTable is above toTable
+        fromX = fromCenterX;
+        toX = toCenterX;
+        const fromY = fromBottom;
+        const toY = toTop;
+        return { fromX, fromY, toX, toY };
+      } else {
+        // fromTable is below toTable
+        fromX = fromCenterX;
+        toX = toCenterX;
+        const fromY = fromTop;
+        const toY = toBottom;
+        return { fromX, fromY, toX, toY };
       }
     }
 
-    return { fromX: bestFrom.x, fromY: bestFrom.y, toX: bestTo.x, toY: bestTo.y };
-  }, [fromPos, toPos, fromTable, toTable]);
+    // Default: horizontal connection using column Y positions
+    return {
+      fromX,
+      fromY: fromColumnY,
+      toX,
+      toY: toColumnY,
+    };
+  }, [fromPos, toPos, fromTable, toTable, relationship]);
 
   // Memoize relationship type styling
   const lineStyle = useMemo(() => {

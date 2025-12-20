@@ -2,18 +2,19 @@ import React, { useMemo, memo } from 'react';
 import { Diagram } from '../../core/diagram/Diagram';
 import { TableNode } from '../TableNode/TableNode';
 import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
-import { Viewport, isInViewport, getExpandedViewport, Bounds } from '../../utils/viewport';
+import { Viewport } from '../../utils/viewport';
 import { UIState } from '../../state/store/uiStore';
 
-// Approximate table dimensions for viewport calculations
-const TABLE_WIDTH = 200;
-const TABLE_HEADER_HEIGHT = 40;
-const COLUMN_HEIGHT = 30;
+// Approximate table dimensions for viewport calculations (currently unused - viewport filtering disabled)
+// const TABLE_WIDTH = 200;
+// const TABLE_HEADER_HEIGHT = 40;
+// const COLUMN_HEIGHT = 30;
 
 interface DiagramContentProps {
   diagram: Diagram;
   uiState: UIState;
   viewport: Viewport;
+  draggedTableId: string | null;
   onTableSelect: (tableId: string) => void;
   onTableDoubleClick: (tableId: string) => void;
   onTableDragStart: (tableId: string, e: React.MouseEvent) => void;
@@ -28,34 +29,49 @@ interface DiagramContentProps {
 const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   diagram,
   uiState,
-  viewport,
+  viewport: _viewport,
+  draggedTableId: _draggedTableId,
   onTableSelect,
   onTableDoubleClick,
   onTableDragStart,
   onTableDrag,
   onTableDragEnd,
 }) => {
-  // Get expanded viewport for pre-rendering (with padding)
-  const expandedViewport = useMemo(() => getExpandedViewport(viewport, 200), [viewport]);
+  // Viewport filtering temporarily disabled - show all tables
+  // const expandedViewport = useMemo(
+  //   () => getExpandedViewport(viewport, draggedTableId ? 1000 : 200),
+  //   [viewport, draggedTableId]
+  // );
 
   // Memoize tables and relationships
   const tables = useMemo(() => diagram.getAllTables(), [diagram]);
   const relationships = useMemo(() => diagram.getAllRelationships(), [diagram]);
 
   // Filter tables visible in viewport (with padding for smooth scrolling)
+  // TEMPORARILY DISABLE VIEWPORT FILTERING to prevent tables from disappearing
+  // TODO: Re-enable viewport filtering with proper bounds checking
   const visibleTables = useMemo(() => {
-    return tables.filter(table => {
-      const pos = table.getPosition();
-      const columnCount = table.getAllColumns().length;
-      const bounds: Bounds = {
-        x: pos.x,
-        y: pos.y,
-        width: TABLE_WIDTH,
-        height: TABLE_HEADER_HEIGHT + columnCount * COLUMN_HEIGHT,
-      };
-      return isInViewport(bounds, expandedViewport);
-    });
-  }, [tables, expandedViewport]);
+    // Show all tables for now to prevent disappearing issue
+    return tables;
+
+    // Original viewport filtering code (disabled for debugging)
+    // return tables.filter(table => {
+    //   // Always show table that is being dragged
+    //   if (draggedTableId && table.getId() === draggedTableId) {
+    //     return true;
+    //   }
+    //   const pos = table.getPosition();
+    //   const columnCount = table.getAllColumns().length;
+    //   const bounds: Bounds = {
+    //     x: pos.x,
+    //     y: pos.y,
+    //     width: TABLE_WIDTH,
+    //     height: TABLE_HEADER_HEIGHT + columnCount * COLUMN_HEIGHT,
+    //   };
+    //   // Use expanded viewport to include tables near the visible area
+    //   return isInViewport(bounds, expandedViewport);
+    // });
+  }, [tables]);
 
   // Filter relationships - show all relationships if both tables exist
   // Temporarily disable viewport filtering for relationships to debug

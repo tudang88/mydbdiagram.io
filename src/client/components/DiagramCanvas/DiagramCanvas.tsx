@@ -99,22 +99,87 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
         return;
       }
 
-      if (e.button === 0 && (e.target as HTMLElement).closest('.table-node') === null) {
-        // Left mouse button and not clicking on table
+      // Only start canvas pan if not clicking on table
+      // Check if clicking on table node
+      const tableNode = (e.target as HTMLElement).closest('.table-node');
+      if (e.button === 0 && tableNode === null) {
+        // Left mouse button and not clicking on table - start canvas pan
         setIsDragging(true);
         setDragStart({
           x: e.clientX - uiState.panOffset.x,
           y: e.clientY - uiState.panOffset.y,
         });
+      } else {
+        // Clicking on table - ensure canvas dragging is off
+        setIsDragging(false);
       }
     },
     [uiState.panOffset]
   );
 
+  // Optimized table drag handler using requestAnimationFrame
+  const animationFrameRef = useRef<number | null>(null);
+  const dragStateRef = useRef<{
+    tableId: string | null;
+    startX: number;
+    startY: number;
+    tableStartX: number;
+    tableStartY: number;
+  } | null>(null);
+
+  // Table drag handler - can be called from both TableNode and document events
+  const handleTableDragInternal = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!diagram || !dragStateRef.current || !dragStateRef.current.tableId) {
+        return;
+      }
+
+      const table = diagram.getTable(dragStateRef.current.tableId);
+      if (!table) {
+        return;
+      }
+
+      // Cancel previous animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      // Use requestAnimationFrame for smooth updates
+      animationFrameRef.current = requestAnimationFrame(() => {
+        if (!dragStateRef.current) return;
+
+        const zoom = uiStore.getState().zoomLevel;
+
+        // Calculate mouse movement delta in viewport coordinates
+        const deltaXViewport = clientX - dragStateRef.current.startX;
+        const deltaYViewport = clientY - dragStateRef.current.startY;
+
+        // Convert delta from viewport to canvas space (divide by zoom)
+        // This ensures table moves the same visual distance as mouse
+        const deltaXCanvas = deltaXViewport / zoom;
+        const deltaYCanvas = deltaYViewport / zoom;
+
+        // Update table position: start position + delta in canvas space
+        table.moveTo({
+          x: dragStateRef.current.tableStartX + deltaXCanvas,
+          y: dragStateRef.current.tableStartY + deltaYCanvas,
+        });
+      });
+    },
+    [diagram, uiStore]
+  );
+
   // Throttled pan move handler for better performance
   const handleMouseMoveThrottled = useMemo(() => {
     const panHandler = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isDragging && !draggedTableId) {
+      // CRITICAL: If dragging a table, ONLY handle table drag, NEVER pan canvas
+      if (draggedTableId) {
+        handleTableDragInternal(e.clientX, e.clientY);
+        return; // STOP - don't pan canvas when dragging table
+      }
+
+      // Only pan canvas if explicitly dragging canvas (not table)
+      if (isDragging) {
         uiStore.setState({
           panOffset: {
             x: e.clientX - dragStart.x,
@@ -126,7 +191,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     return throttle(panHandler as (...args: unknown[]) => void, 16) as (
       e: React.MouseEvent<HTMLDivElement>
     ) => void; // ~60fps
-  }, [isDragging, dragStart, draggedTableId, uiStore]);
+  }, [isDragging, dragStart, draggedTableId, uiStore, handleTableDragInternal]);
 
   // Handle pan move
   const handleMouseMove = useCallback(
@@ -138,8 +203,9 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
 
   // Handle pan end
   const handleMouseUp = useCallback(() => {
+    // Always clear canvas dragging state
     setIsDragging(false);
-    setDraggedTableId(null);
+    // Note: draggedTableId will be cleared by handleTableDragEnd or document mouseup
   }, []);
 
   // Handle table selection
@@ -161,13 +227,18 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   // Handle table drag start
   const handleTableDragStart = useCallback(
     (tableId: string, e: React.MouseEvent) => {
+      // CRITICAL: Set draggedTableId FIRST, then clear isDragging
+      // This ensures canvas pan is immediately disabled
       setDraggedTableId(tableId);
-      setIsDragging(false);
+      setIsDragging(false); // CRITICAL: Prevent canvas pan when dragging table
 
       // Store initial drag state for smooth calculation
       const table = diagramStore.getDiagram()?.getTable(tableId);
       if (table) {
         const pos = table.getPosition();
+
+        // Store mouse position in viewport coordinates (simple and direct)
+        // We'll calculate delta in viewport and convert to canvas space during drag
         dragStateRef.current = {
           tableId,
           startX: e.clientX,
@@ -180,60 +251,49 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     [diagramStore]
   );
 
-  // Optimized table drag handler using requestAnimationFrame
-  const animationFrameRef = useRef<number | null>(null);
-  const dragStateRef = useRef<{
-    tableId: string | null;
-    startX: number;
-    startY: number;
-    tableStartX: number;
-    tableStartY: number;
-  } | null>(null);
+  // Document-level mouse move handler for continuous dragging
+  useEffect(() => {
+    if (!draggedTableId) return;
 
-  const handleTableDragThrottled = useMemo(() => {
-    const dragHandler = (tableId: string, e: React.MouseEvent) => {
-      if (!diagram || !dragStateRef.current || dragStateRef.current.tableId !== tableId) return;
-
-      const table = diagram.getTable(tableId);
-      if (!table) return;
-
-      // Cancel previous animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+    const handleDocumentMouseMove = (e: MouseEvent) => {
+      if (draggedTableId && dragStateRef.current) {
+        handleTableDragInternal(e.clientX, e.clientY);
       }
-
-      // Use requestAnimationFrame for smooth updates
-      animationFrameRef.current = requestAnimationFrame(() => {
-        const zoom = uiStore.getState().zoomLevel;
-        const canvasRect = canvasRef.current?.getBoundingClientRect();
-        if (!canvasRect || !dragStateRef.current) return;
-
-        // Calculate delta from drag start
-        const deltaX = (e.clientX - dragStateRef.current.startX) / zoom;
-        const deltaY = (e.clientY - dragStateRef.current.startY) / zoom;
-
-        // Update table position using delta (smoother than absolute positioning)
-        table.moveTo({
-          x: dragStateRef.current.tableStartX + deltaX,
-          y: dragStateRef.current.tableStartY + deltaY,
-        });
-      });
     };
-    return dragHandler;
-  }, [diagram, uiStore]);
 
-  // Handle table drag
+    const handleDocumentMouseUp = () => {
+      if (draggedTableId) {
+        setDraggedTableId(null);
+        dragStateRef.current = null;
+        setIsDragging(false); // Also clear canvas dragging state
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', handleDocumentMouseMove);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+  }, [draggedTableId, handleTableDragInternal]);
+
+  // Handle table drag (called from TableNode)
   const handleTableDrag = useCallback(
-    (tableId: string, e: React.MouseEvent) => {
-      handleTableDragThrottled(tableId, e);
+    (_tableId: string, e: React.MouseEvent) => {
+      handleTableDragInternal(e.clientX, e.clientY);
     },
-    [handleTableDragThrottled]
+    [handleTableDragInternal]
   );
 
   // Handle table drag end
   const handleTableDragEnd = useCallback(() => {
     setDraggedTableId(null);
     dragStateRef.current = null;
+    setIsDragging(false); // Also clear canvas dragging state
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -401,6 +461,7 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               height: canvasRef.current?.clientHeight || 0,
               zoom: uiState.zoomLevel,
             }}
+            draggedTableId={draggedTableId}
             onTableSelect={handleTableSelect}
             onTableDoubleClick={handleTableDoubleClick}
             onTableDragStart={handleTableDragStart}
