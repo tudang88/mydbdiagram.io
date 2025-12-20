@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { JSONParser } from '../../core/parser/JSONParser';
 import { SQLParser } from '../../core/parser/SQLParser';
 import { Diagram } from '../../core/diagram/Diagram';
@@ -20,6 +20,22 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
   const [isValidating, setIsValidating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset all state when dialog closes
+      setSqlText('');
+      setJsonText('');
+      setError(null);
+      setIsValidating(false);
+      setMode('paste');
+    } else {
+      // Reset validating state when dialog opens (in case it was left in loading state)
+      setIsValidating(false);
+    }
+  }, [isOpen]);
+
+  // Return null after useEffect to ensure cleanup runs
   if (!isOpen) return null;
 
   const handleFileSelect = () => {
@@ -135,10 +151,12 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
       // Pass the original text to onImport so it can be set in editor
       const importText = mode === 'sql' ? sqlText : mode === 'json' ? undefined : undefined;
       onImport(result.data, importText);
-      onClose();
+      // Reset state before closing
       setSqlText('');
       setJsonText('');
       setError(null);
+      setIsValidating(false);
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import error');
       setIsValidating(false);
@@ -149,6 +167,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
     setSqlText('');
     setJsonText('');
     setError(null);
+    setIsValidating(false); // Reset validating state when canceling
     onClose();
   };
 
