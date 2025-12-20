@@ -25,6 +25,11 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   const toX = toPos.x;
   const toY = toPos.y;
 
+  // Constants for marker offsets (defined outside useMemo for debug access)
+  const MARKER_ONE_OFFSET = 10; // Distance from table edge to ONE marker (rời ra cho dễ đọc)
+  const MARKER_MANY_OFFSET = 1; // Distance from table edge to MANY marker (sát với cạnh table)
+  const MARKER_SIZE = 12; // Approximate marker size (for calculation)
+
   // Calculate orthogonal path (right-angle routing) from column positions (like dbdiagram.io)
   // Include position keys in dependencies to ensure recalculation when table moves
   const pathData = useMemo(() => {
@@ -32,10 +37,9 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     const TABLE_WIDTH = 200; // Standard table width
     const TABLE_HEADER_HEIGHT = 40;
     const COLUMN_HEIGHT = 30;
-    const MARKER_ONE_OFFSET = 10; // Distance from table edge to ONE marker (rời ra cho dễ đọc)
-    const MARKER_MANY_OFFSET = 1; // Distance from table edge to MANY marker (sát với cạnh table)
-    const MARKER_SIZE = 12; // Approximate marker size (for calculation)
-    const HORIZONTAL_OFFSET = MARKER_ONE_OFFSET + MARKER_SIZE + 15; // Distance from table edge for horizontal segment (far enough to avoid marker overlap)
+    // Ensure HORIZONTAL_OFFSET is large enough to prevent line from overlapping table
+    // Minimum 40px to ensure line doesn't go through table even with markers
+    const HORIZONTAL_OFFSET = Math.max(40, MARKER_ONE_OFFSET + MARKER_SIZE + 15);
 
     // Get the specific columns involved in this relationship
     const fromColumnId = relationship.getFromColumnId();
@@ -94,8 +98,23 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
 
     // Determine marker offsets based on relationship type
     const relationshipType = relationship.getType();
-    const getMarkerOffset = (isMany: boolean) => {
-      return isMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET;
+    
+    // Check if table is the first table (table-1 - first table ID from parser)
+    const isFirstTable = (table: typeof fromTable) => {
+      const tableId = table.getId();
+      return tableId === 'table-1';
+    };
+    
+    const isFromTableFirst = isFirstTable(fromTable);
+    const isToTableFirst = isFirstTable(toTable);
+    
+    const getMarkerOffset = (isMany: boolean, isFirstTable: boolean) => {
+      if (isMany) {
+        return MARKER_MANY_OFFSET;
+      }
+      // Increase offset for ONE marker on first table to prevent overlap
+      // Add extra offset to match spacing of other tables
+      return isFirstTable ? MARKER_ONE_OFFSET + 10 : MARKER_ONE_OFFSET;
     };
 
     // If fromTable is to the left of toTable
@@ -105,10 +124,31 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       // Create orthogonal path: starts at table edge, goes horizontal, vertical, horizontal, ends at table edge
       const midX = fromX + HORIZONTAL_OFFSET;
 
-      // Determine which side is MANY based on relationship type
-      // In ONE_TO_MANY: fromTable (has foreign key) = MANY, toTable (has primary key) = ONE
-      const fromIsMany = relationshipType === 'MANY_TO_MANY' || relationshipType === 'ONE_TO_MANY';
-      const toIsMany = relationshipType === 'MANY_TO_MANY';
+      // Determine which side is MANY based on relationship type and column constraints
+      // In ONE_TO_MANY: table with primary key = ONE, table with foreign key = MANY
+      let fromIsMany: boolean;
+      let toIsMany: boolean;
+      
+      if (relationshipType === 'MANY_TO_MANY') {
+        fromIsMany = true;
+        toIsMany = true;
+      } else if (relationshipType === 'ONE_TO_ONE') {
+        fromIsMany = false;
+        toIsMany = false;
+      } else {
+        // ONE_TO_MANY: Check which column has primary key vs foreign key
+        const fromColumn = fromTable.getColumn(fromColumnId);
+        const toColumn = toTable.getColumn(toColumnId);
+        const fromColumnIsPk = fromColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
+        const toColumnIsPk = toColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
+        const fromColumnIsFk = fromColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
+        const toColumnIsFk = toColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
+        
+        // Table with primary key = ONE (false), table with foreign key = MANY (true)
+        // If column has primary key, it's ONE side; if it has foreign key, it's MANY side
+        fromIsMany = fromColumnIsFk || (fromColumnIsPk ? false : true); // Default to MANY if unclear
+        toIsMany = toColumnIsFk || (toColumnIsPk ? false : true); // Default to MANY if unclear
+      }
 
       return {
         path: `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`,
@@ -118,9 +158,9 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         pathEndX: toX,
         pathEndY: toColumnY,
         // Marker positions (outside table edges, adjusted based on marker type)
-        markerStartX: fromX + getMarkerOffset(fromIsMany),
+        markerStartX: fromX + getMarkerOffset(fromIsMany, isFromTableFirst),
         markerStartY: fromColumnY,
-        markerEndX: toX - getMarkerOffset(toIsMany),
+        markerEndX: toX - getMarkerOffset(toIsMany, isToTableFirst),
         markerEndY: toColumnY,
         // Direction for markers (needed to draw them correctly)
         startDirection: 'right' as const, // Marker points to the right (away from table)
@@ -133,10 +173,31 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       // Create orthogonal path: starts at table edge, goes horizontal, vertical, horizontal, ends at table edge
       const midX = fromX - HORIZONTAL_OFFSET;
 
-      // Determine which side is MANY based on relationship type
-      // In ONE_TO_MANY: fromTable (has foreign key) = MANY, toTable (has primary key) = ONE
-      const fromIsMany = relationshipType === 'MANY_TO_MANY' || relationshipType === 'ONE_TO_MANY';
-      const toIsMany = relationshipType === 'MANY_TO_MANY';
+      // Determine which side is MANY based on relationship type and column constraints
+      // In ONE_TO_MANY: table with primary key = ONE, table with foreign key = MANY
+      let fromIsMany: boolean;
+      let toIsMany: boolean;
+      
+      if (relationshipType === 'MANY_TO_MANY') {
+        fromIsMany = true;
+        toIsMany = true;
+      } else if (relationshipType === 'ONE_TO_ONE') {
+        fromIsMany = false;
+        toIsMany = false;
+      } else {
+        // ONE_TO_MANY: Check which column has primary key vs foreign key
+        const fromColumn = fromTable.getColumn(fromColumnId);
+        const toColumn = toTable.getColumn(toColumnId);
+        const fromColumnIsPk = fromColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
+        const toColumnIsPk = toColumn?.constraints.some(c => c.type === 'PRIMARY_KEY') ?? false;
+        const fromColumnIsFk = fromColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
+        const toColumnIsFk = toColumn?.constraints.some(c => c.type === 'FOREIGN_KEY') ?? false;
+        
+        // Table with primary key = ONE (false), table with foreign key = MANY (true)
+        // If column has primary key, it's ONE side; if it has foreign key, it's MANY side
+        fromIsMany = fromColumnIsFk || (fromColumnIsPk ? false : true); // Default to MANY if unclear
+        toIsMany = toColumnIsFk || (toColumnIsPk ? false : true); // Default to MANY if unclear
+      }
 
       return {
         path: `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`,
@@ -146,9 +207,9 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         pathEndX: toX,
         pathEndY: toColumnY,
         // Marker positions (outside table edges, adjusted based on marker type)
-        markerStartX: fromX - getMarkerOffset(fromIsMany),
+        markerStartX: fromX - getMarkerOffset(fromIsMany, isFromTableFirst),
         markerStartY: fromColumnY,
-        markerEndX: toX + getMarkerOffset(toIsMany),
+        markerEndX: toX + getMarkerOffset(toIsMany, isToTableFirst),
         markerEndY: toColumnY,
         // Direction for markers
         startDirection: 'left' as const, // Marker points to the left (away from table)
@@ -221,15 +282,22 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     }
   };
 
-  // Debug: Log path data (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`📍 RelationshipLine ${relationship.getId()}:`, {
-      path: pathData.path,
-      from: `${fromTable.getName()} at (${pathData.pathStartX}, ${pathData.pathStartY})`,
-      to: `${toTable.getName()} at (${pathData.pathEndX}, ${pathData.pathEndY})`,
-      markers: {
-        start: `(${pathData.markerStartX}, ${pathData.markerStartY})`,
-        end: `(${pathData.markerEndX}, ${pathData.markerEndY})`,
+  // Debug: Log path data (only in development) - temporarily enable to debug marker position
+  if (process.env.NODE_ENV === 'development' && fromTable.getName() === 'users') {
+    const relationshipType = relationship.getType();
+    const fromIsMany = relationshipType === 'MANY_TO_MANY' || relationshipType === 'ONE_TO_MANY';
+    const toIsMany = relationshipType === 'MANY_TO_MANY';
+    console.log(`📍 RelationshipLine ${relationship.getId()} (${fromTable.getName()} -> ${toTable.getName()}):`, {
+      relationshipType,
+      fromTablePos: `${fromPos.x}, ${fromPos.y}`,
+      toTablePos: `${toPos.x}, ${toPos.y}`,
+      pathStart: `(${pathData.pathStartX}, ${pathData.pathStartY})`,
+      pathEnd: `(${pathData.pathEndX}, ${pathData.pathEndY})`,
+      markerStart: `(${pathData.markerStartX}, ${pathData.markerStartY}) - isMany: ${fromIsMany}`,
+      markerEnd: `(${pathData.markerEndX}, ${pathData.markerEndY}) - isMany: ${toIsMany}`,
+      offsets: {
+        start: fromIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
+        end: toIsMany ? MARKER_MANY_OFFSET : MARKER_ONE_OFFSET,
       },
     });
   }
@@ -244,7 +312,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 0, // Behind tables
         overflow: 'visible',
       }}
     >
