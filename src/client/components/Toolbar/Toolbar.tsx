@@ -15,6 +15,7 @@ interface ToolbarProps {
   diagramStore: DiagramStore;
   onNewDiagram: () => void;
   onDiagramLoaded: () => void;
+  onImportText?: (text: string) => void; // Callback to set text in editor
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -23,6 +24,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   diagramStore,
   onNewDiagram,
   onDiagramLoaded,
+  onImportText,
 }) => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -58,9 +60,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
-  const handleImport = (diagram: Diagram) => {
+  const handleImport = (diagram: Diagram, importText?: string) => {
     diagramStore.setDiagram(diagram);
     onDiagramLoaded();
+    // Set text in editor if provided
+    if (importText && onImportText) {
+      onImportText(importText);
+    }
   };
 
   return (

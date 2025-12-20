@@ -47,6 +47,7 @@ function App() {
   const [relationshipToTable, setRelationshipToTable] = useState<string | undefined>();
   const [sqlDialect, setSqlDialect] = useState<'sql' | 'postgresql'>('sql');
   const [showSQLEditor] = useState(true); // Can be toggled in future
+  const [importText, setImportText] = useState<string | undefined>(undefined);
 
   // Initialize with empty diagram if none exists
   useEffect(() => {
@@ -245,6 +246,7 @@ function App() {
           diagramStore={diagramStore}
           onNewDiagram={handleNewDiagram}
           onDiagramLoaded={handleDiagramLoaded}
+          onImportText={setImportText}
         />
         <div className="app-main">
           {showSQLEditor && (
@@ -254,6 +256,7 @@ function App() {
                 onDiagramChange={handleDiagramChangeFromSQL}
                 sqlDialect={sqlDialect}
                 onDialectChange={setSqlDialect}
+                initialText={importText}
               />
             </div>
           )}

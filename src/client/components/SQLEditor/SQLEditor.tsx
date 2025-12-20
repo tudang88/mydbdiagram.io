@@ -9,6 +9,7 @@ interface SQLEditorProps {
   onDiagramChange: (diagram: Diagram) => void;
   sqlDialect: 'sql' | 'postgresql';
   onDialectChange: (dialect: 'sql' | 'postgresql') => void;
+  initialText?: string; // Optional initial text to set in editor
 }
 
 export const SQLEditor: React.FC<SQLEditorProps> = ({
@@ -16,6 +17,7 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   onDiagramChange,
   sqlDialect,
   onDialectChange,
+  initialText,
 }) => {
   const [sqlText, setSqlText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,14 +25,22 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
+  // Set initial text if provided (e.g., from import)
+  useEffect(() => {
+    if (initialText !== undefined) {
+      setSqlText(initialText);
+      setError(null);
+    }
+  }, [initialText]);
+
   // Clear editor when new empty diagram is created
   useEffect(() => {
     // If diagram is new/empty (no tables), clear editor
-    if (diagram && diagram.getAllTables().length === 0) {
+    if (diagram && diagram.getAllTables().length === 0 && initialText === undefined) {
       setSqlText('');
       setError(null);
     }
-  }, [diagram]);
+  }, [diagram, initialText]);
 
   // Initialize with example SQL/DBML if editor is empty
   useEffect(() => {

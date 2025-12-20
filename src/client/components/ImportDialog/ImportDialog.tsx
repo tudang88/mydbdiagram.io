@@ -7,7 +7,7 @@ import './ImportDialog.css';
 interface ImportDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (diagram: Diagram) => void;
+  onImport: (diagram: Diagram, importText?: string) => void; // Include import text for editor
 }
 
 type ImportMode = 'sql' | 'json' | 'paste';
@@ -30,23 +30,33 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const text = await file.text();
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const text = await file.text();
 
-    if (fileExtension === 'sql') {
-      setMode('sql');
-      setSqlText(text);
-    } else if (fileExtension === 'json') {
-      setMode('json');
-      setJsonText(text);
-    } else {
-      setError('Unsupported file format. Please use .sql or .json files.');
-      return;
-    }
+      if (!text || !text.trim()) {
+        setError('File is empty');
+        return;
+      }
 
-    setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      if (fileExtension === 'sql') {
+        setMode('sql');
+        setSqlText(text);
+        setError(null);
+      } else if (fileExtension === 'json') {
+        setMode('json');
+        setJsonText(text);
+        setError(null);
+      } else {
+        setError('Unsupported file format. Please use .sql or .json files.');
+        return;
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to read file');
     }
   };
 
@@ -90,28 +100,47 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
       let text: string;
 
       if (mode === 'sql') {
+        if (!sqlText.trim()) {
+          setError('Please enter SQL statements to import');
+          setIsValidating(false);
+          return;
+        }
         parser = new SQLParser();
         text = sqlText;
-      } else {
+      } else if (mode === 'json') {
+        if (!jsonText.trim()) {
+          setError('Please enter JSON data to import');
+          setIsValidating(false);
+          return;
+        }
         parser = new JSONParser();
         text = jsonText;
-      }
-
-      const result = parser.parse(text);
-      if (!result.success || !result.data) {
-        setError(result.errors?.map(e => e.message).join('\n') || 'Failed to parse input');
+      } else {
+        setError('Please select a mode (SQL or JSON) and enter data');
         setIsValidating(false);
         return;
       }
 
-      onImport(result.data);
+      const result = parser.parse(text);
+      if (!result.success || !result.data) {
+        const errorMessage = result.errors?.map(e => e.message).join('\n') || 'Failed to parse input';
+        setError(errorMessage);
+        setIsValidating(false);
+        console.error('Import parse failed:', errorMessage, result);
+        return;
+      }
+
+      // Successfully parsed - import the diagram
+      console.log('Import successful, diagram:', result.data);
+      // Pass the original text to onImport so it can be set in editor
+      const importText = mode === 'sql' ? sqlText : mode === 'json' ? undefined : undefined;
+      onImport(result.data, importText);
       onClose();
       setSqlText('');
       setJsonText('');
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import error');
-    } finally {
       setIsValidating(false);
     }
   };
