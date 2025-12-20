@@ -18,12 +18,13 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   const fromPos = useMemo(() => fromTable.getPosition(), [fromTable]);
   const toPos = useMemo(() => toTable.getPosition(), [toTable]);
 
-  // Calculate line endpoints from column positions (like dbdiagram.io)
-  const lineCoords = useMemo(() => {
+  // Calculate orthogonal path (right-angle routing) from column positions (like dbdiagram.io)
+  const pathData = useMemo(() => {
     // Get table dimensions - use actual table dimensions
     const TABLE_WIDTH = 200; // Standard table width
     const TABLE_HEADER_HEIGHT = 40;
     const COLUMN_HEIGHT = 30;
+    const HORIZONTAL_OFFSET = 20; // Distance from table edge for horizontal segment
 
     // Get the specific columns involved in this relationship
     const fromColumnId = relationship.getFromColumnId();
@@ -41,16 +42,21 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     if (fromColumnIndex === -1 || toColumnIndex === -1) {
       const fromHeight = TABLE_HEADER_HEIGHT + fromColumns.length * COLUMN_HEIGHT;
       const toHeight = TABLE_HEADER_HEIGHT + toColumns.length * COLUMN_HEIGHT;
+      const fromX = fromPos.x + TABLE_WIDTH / 2;
+      const fromY = fromPos.y + fromHeight / 2;
+      const toX = toPos.x + TABLE_WIDTH / 2;
+      const toY = toPos.y + toHeight / 2;
+      // Simple straight line fallback
       return {
-        fromX: fromPos.x + TABLE_WIDTH / 2,
-        fromY: fromPos.y + fromHeight / 2,
-        toX: toPos.x + TABLE_WIDTH / 2,
-        toY: toPos.y + toHeight / 2,
+        path: `M ${fromX} ${fromY} L ${toX} ${toY}`,
+        fromX,
+        fromY,
+        toX,
+        toY,
       };
     }
 
     // Calculate Y position of the column (center of the column row)
-    // Y = table top + header height + (column index * column height) + (column height / 2)
     const fromColumnY =
       fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
     const toColumnY =
@@ -59,63 +65,41 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     // Calculate table boundaries
     const fromLeft = fromPos.x;
     const fromRight = fromPos.x + TABLE_WIDTH;
-    const fromTop = fromPos.y;
-    const fromBottom = fromPos.y + TABLE_HEADER_HEIGHT + fromColumns.length * COLUMN_HEIGHT;
-
     const toLeft = toPos.x;
     const toRight = toPos.x + TABLE_WIDTH;
-    const toTop = toPos.y;
-    const toBottom = toPos.y + TABLE_HEADER_HEIGHT + toColumns.length * COLUMN_HEIGHT;
 
     // Determine which edge to connect from/to based on table positions
-    // Calculate relative positions to determine best edge
     const fromCenterX = fromPos.x + TABLE_WIDTH / 2;
     const toCenterX = toPos.x + TABLE_WIDTH / 2;
 
-    // Determine connection points: use left or right edge based on table positions
     let fromX: number;
     let toX: number;
 
-    // If fromTable is to the left of toTable, connect from right edge of fromTable to left edge of toTable
+    // If fromTable is to the left of toTable
     if (fromCenterX < toCenterX) {
       fromX = fromRight;
       toX = toLeft;
+      // Create orthogonal path: horizontal from table, vertical to target column Y, horizontal to target
+      return {
+        path: `M ${fromX} ${fromColumnY} L ${fromX + HORIZONTAL_OFFSET} ${fromColumnY} L ${fromX + HORIZONTAL_OFFSET} ${toColumnY} L ${toX} ${toColumnY}`,
+        fromX: fromX + HORIZONTAL_OFFSET,
+        fromY: fromColumnY,
+        toX,
+        toY: toColumnY,
+      };
     } else {
-      // If fromTable is to the right of toTable, connect from left edge of fromTable to right edge of toTable
+      // If fromTable is to the right of toTable
       fromX = fromLeft;
       toX = toRight;
+      // Create orthogonal path: horizontal from table, vertical to midpoint, horizontal to target
+      return {
+        path: `M ${fromX} ${fromColumnY} L ${fromX - HORIZONTAL_OFFSET} ${fromColumnY} L ${fromX - HORIZONTAL_OFFSET} ${toColumnY} L ${toX} ${toColumnY}`,
+        fromX: fromX - HORIZONTAL_OFFSET,
+        fromY: fromColumnY,
+        toX,
+        toY: toColumnY,
+      };
     }
-
-    // If tables are vertically aligned, prefer top/bottom edges
-    const verticalDistance = Math.abs(fromColumnY - toColumnY);
-    const horizontalDistance = Math.abs(fromCenterX - toCenterX);
-
-    // If vertical distance is much larger than horizontal, use top/bottom edges
-    if (verticalDistance > horizontalDistance * 1.5) {
-      if (fromColumnY < toColumnY) {
-        // fromTable is above toTable
-        fromX = fromCenterX;
-        toX = toCenterX;
-        const fromY = fromBottom;
-        const toY = toTop;
-        return { fromX, fromY, toX, toY };
-      } else {
-        // fromTable is below toTable
-        fromX = fromCenterX;
-        toX = toCenterX;
-        const fromY = fromTop;
-        const toY = toBottom;
-        return { fromX, fromY, toX, toY };
-      }
-    }
-
-    // Default: horizontal connection using column Y positions
-    return {
-      fromX,
-      fromY: fromColumnY,
-      toX,
-      toY: toColumnY,
-    };
   }, [fromPos, toPos, fromTable, toTable, relationship]);
 
   // Memoize relationship type styling
@@ -133,16 +117,16 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     return 'default';
   }, [relationship]);
 
-  // Arrow head size
-  const arrowSize = 8;
+  // Marker sizes
+  const markerSize = 8;
+  const relationshipType = relationship.getType();
 
-  // Debug: Log line coordinates (only in development)
+  // Debug: Log path data (only in development)
   if (process.env.NODE_ENV === 'development') {
     console.log(`📍 RelationshipLine ${relationship.getId()}:`, {
-      from: `${fromTable.getName()} at (${lineCoords.fromX}, ${lineCoords.fromY})`,
-      to: `${toTable.getName()} at (${lineCoords.toX}, ${lineCoords.toY})`,
-      fromTablePos: fromPos,
-      toTablePos: toPos,
+      path: pathData.path,
+      from: `${fromTable.getName()} at (${pathData.fromX}, ${pathData.fromY})`,
+      to: `${toTable.getName()} at (${pathData.toX}, ${pathData.toY})`,
     });
   }
 
@@ -161,31 +145,66 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       }}
     >
       <defs>
+        {/* Circle with horizontal line for "one" side (like dbdiagram.io) */}
+        <marker
+          id={`one-marker-${relationship.getId()}`}
+          markerWidth={markerSize * 2}
+          markerHeight={markerSize * 2}
+          refX={markerSize}
+          refY={markerSize}
+          orient="auto"
+          markerUnits="userSpaceOnUse"
+        >
+          <g stroke="#666" strokeWidth="1" fill="none">
+            {/* Circle */}
+            <circle cx={markerSize} cy={markerSize} r={markerSize * 0.4} />
+            {/* Short horizontal line extending from circle */}
+            <line x1={markerSize} y1={markerSize} x2={markerSize * 1.8} y2={markerSize} />
+          </g>
+        </marker>
+
+        {/* Arrow head for "many" side (like dbdiagram.io) */}
         <marker
           id={`arrowhead-${relationship.getId()}`}
-          markerWidth={arrowSize}
-          markerHeight={arrowSize}
-          refX={arrowSize}
-          refY={arrowSize / 2}
-          orient="auto-start-reverse"
+          markerWidth={8}
+          markerHeight={8}
+          refX={8}
+          refY={4}
+          orient="auto"
+          markerUnits="userSpaceOnUse"
         >
-          <polygon points={`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`} fill="#666" />
+          <polygon points="0,0 8,4 0,8" fill="#666" />
         </marker>
       </defs>
-      <line
-        x1={lineCoords.fromX}
-        y1={lineCoords.fromY}
-        x2={lineCoords.toX}
-        y2={lineCoords.toY}
+      <path
+        d={pathData.path}
         className={`relationship-line-${lineStyle}`}
-        markerEnd={`url(#arrowhead-${relationship.getId()})`}
+        markerStart={
+          relationshipType === 'MANY_TO_MANY'
+            ? undefined
+            : relationshipType === 'ONE_TO_MANY'
+              ? `url(#one-marker-${relationship.getId()})`
+              : relationshipType === 'ONE_TO_ONE'
+                ? `url(#one-marker-${relationship.getId()})`
+                : undefined
+        }
+        markerEnd={
+          relationshipType === 'MANY_TO_MANY'
+            ? `url(#arrowhead-${relationship.getId()})`
+            : relationshipType === 'ONE_TO_MANY'
+              ? `url(#arrowhead-${relationship.getId()})`
+              : relationshipType === 'ONE_TO_ONE'
+                ? `url(#arrowhead-${relationship.getId()})`
+                : `url(#arrowhead-${relationship.getId()})`
+        }
         strokeWidth={1}
         stroke="#666"
+        fill="none"
       />
       {relationship.isOptional() && (
         <circle
-          cx={lineCoords.fromX}
-          cy={lineCoords.fromY}
+          cx={pathData.fromX}
+          cy={pathData.fromY}
           r={4}
           fill="#666"
           className="optional-marker"

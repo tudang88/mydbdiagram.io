@@ -14,6 +14,7 @@
   stroke: #666 !important;
   stroke-width: 1 !important;
   opacity: 1 !important;
+  fill: none;
 }
 
 .relationship-line-one-to-one,
@@ -25,16 +26,22 @@
   fill: none;
 }
 
+/* One-to-one: dashed line with single line markers on both ends */
 .relationship-line-one-to-one {
-  stroke-dasharray: 5, 5;
-}
-
-.relationship-line-one-to-many {
+  stroke-dasharray: none;
   stroke: #666;
 }
 
+/* One-to-many: solid line with single line on "one" side, crow's foot on "many" side */
+.relationship-line-one-to-many {
+  stroke: #666;
+  stroke-dasharray: none;
+}
+
+/* Many-to-many: dashed line with crow's foot on both ends */
 .relationship-line-many-to-many {
   stroke-dasharray: 3, 3;
+  stroke: #666;
 }
 
 .optional-marker {
