@@ -32,6 +32,9 @@ build/
 output/*
 !output/.gitkeep
 
+# Data directory (saved diagrams - not tracked in source code)
+data/
+
 # Temporary files
 *.tmp
 *.temp

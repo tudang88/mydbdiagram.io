@@ -59,9 +59,16 @@ export class DiagramService {
     const diagramData = diagram.toJSON();
 
     // Check if diagram has ID (update) or not (create)
-    const response = diagram.getId()
+    let response = diagram.getId()
       ? await this.apiClient.put<DiagramData>(`/api/diagrams/${diagram.getId()}`, diagramData)
       : await this.apiClient.post<DiagramData>('/api/diagrams', diagramData);
+
+    // If PUT returns 404 (diagram not found), fallback to POST to create new diagram
+    if (!response.success && response.statusCode === 404 && diagram.getId()) {
+      // Remove ID from diagramData to let server generate new ID, or keep existing ID
+      // We'll keep the existing ID and try POST
+      response = await this.apiClient.post<DiagramData>('/api/diagrams', diagramData);
+    }
 
     if (!response.success) {
       return {
