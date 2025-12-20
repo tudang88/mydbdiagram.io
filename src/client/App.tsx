@@ -48,6 +48,7 @@ function App() {
   const [sqlDialect, setSqlDialect] = useState<'sql' | 'postgresql'>('sql');
   const [showSQLEditor] = useState(true); // Can be toggled in future
   const [importText, setImportText] = useState<string | undefined>(undefined);
+  const [editorText, setEditorText] = useState<string>(''); // Track current editor text for saving
 
   // Initialize with empty diagram if none exists
   useEffect(() => {
@@ -248,6 +249,8 @@ function App() {
           onNewDiagram={handleNewDiagram}
           onDiagramLoaded={handleDiagramLoaded}
           onImportText={setImportText}
+          onGetEditorText={() => editorText}
+          onGetEditorFormat={() => (sqlDialect === 'postgresql' ? 'dbml' : 'sql')}
         />
         <div className="app-main">
           {showSQLEditor && (
@@ -258,6 +261,7 @@ function App() {
                 sqlDialect={sqlDialect}
                 onDialectChange={setSqlDialect}
                 initialText={importText}
+                onTextChange={setEditorText}
               />
             </div>
           )}

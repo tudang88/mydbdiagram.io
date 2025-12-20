@@ -16,6 +16,8 @@ interface ToolbarProps {
   onNewDiagram: () => void;
   onDiagramLoaded: () => void;
   onImportText?: (text: string) => void; // Callback to set text in editor
+  onGetEditorText?: () => string | undefined; // Callback to get current editor text
+  onGetEditorFormat?: () => 'sql' | 'dbml' | undefined; // Callback to get current editor format
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -25,6 +27,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onNewDiagram,
   onDiagramLoaded,
   onImportText,
+  onGetEditorText,
+  onGetEditorFormat,
 }) => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -45,6 +49,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
 
     try {
+      // Get current editor text and format before saving
+      const editorText = onGetEditorText?.();
+      const editorFormat = onGetEditorFormat?.();
+      
+      // Update diagram metadata with source text and format
+      if (editorText && editorFormat) {
+        diagram.setSourceText(editorText, editorFormat);
+      }
+
       const result = await diagramService.saveDiagram(diagram);
       if (result.success && result.data) {
         // Update diagram with saved data (including ID if it was a new diagram)

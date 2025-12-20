@@ -15,6 +15,8 @@ export interface Metadata {
 
 export interface DiagramMetadata extends Metadata {
   version?: string;
+  sourceText?: string; // Original SQL/DBML text from editor
+  sourceFormat?: 'sql' | 'dbml'; // Format of source text
 }
 
 export interface TableMetadata {

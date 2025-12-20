@@ -10,6 +10,7 @@ interface SQLEditorProps {
   sqlDialect: 'sql' | 'postgresql';
   onDialectChange: (dialect: 'sql' | 'postgresql') => void;
   initialText?: string; // Optional initial text to set in editor
+  onTextChange?: (text: string) => void; // Callback to track text changes for saving
 }
 
 export const SQLEditor: React.FC<SQLEditorProps> = ({
@@ -18,6 +19,7 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   sqlDialect,
   onDialectChange,
   initialText,
+  onTextChange,
 }) => {
   const [sqlText, setSqlText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +32,12 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
     if (initialText !== undefined) {
       setSqlText(initialText);
       setError(null);
+      // Notify parent of text change when initial text is set
+      if (onTextChange) {
+        onTextChange(initialText);
+      }
     }
-  }, [initialText]);
+  }, [initialText, onTextChange]);
 
   // Clear editor when new empty diagram is created
   useEffect(() => {
@@ -88,6 +94,10 @@ Ref: posts.user_id > users.id`;
   const handleSQLChange = (value: string) => {
     setSqlText(value);
     setError(null);
+    // Notify parent of text change for saving
+    if (onTextChange) {
+      onTextChange(value);
+    }
     // No longer auto-parse - user must click "Draw" button
   };
 
