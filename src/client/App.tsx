@@ -67,6 +67,7 @@ function App() {
       diagramStore.setDiagram(newDiagram);
       uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
       setError(null);
+      setImportText(undefined); // Clear import text so editor is cleared
       showNotification('success', 'New diagram created');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to create new diagram';

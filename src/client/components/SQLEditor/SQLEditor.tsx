@@ -36,9 +36,14 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   // Clear editor when new empty diagram is created
   useEffect(() => {
     // If diagram is new/empty (no tables), clear editor
-    if (diagram && diagram.getAllTables().length === 0 && initialText === undefined) {
-      setSqlText('');
-      setError(null);
+    // Clear regardless of initialText to ensure clean state when "New" is clicked
+    if (diagram && diagram.getAllTables().length === 0) {
+      // Only clear if initialText is undefined (not set from import)
+      // This allows import to set text, but "New" will clear it
+      if (initialText === undefined) {
+        setSqlText('');
+        setError(null);
+      }
     }
   }, [diagram, initialText]);
 
