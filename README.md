@@ -16,7 +16,9 @@ Personal tool similar to dbdiagram.io for database diagramming.
 ```
 mydbdiagramio/
 ├── design/          # Design files and documentation
+├── docs/            # Documentation and test results
 ├── output/          # Exported files from the tool
+├── scripts/         # Shell scripts for development
 └── src/             # Source code
     ├── client/      # Frontend (React + TypeScript)
     └── server/      # Backend (Express + TypeScript)
@@ -40,10 +42,10 @@ npm install
 
 ```bash
 # Recommended: Use run-chrome.sh to automatically open in Chrome
-./run-chrome.sh
+./scripts/run-chrome.sh
 
 # Or use run.sh script (automatically handles port conflicts)
-./run.sh
+./scripts/run.sh
 
 # Or run directly with npm:
 npm run dev
@@ -53,12 +55,12 @@ npm run dev:server  # Backend on http://localhost:3000
 npm run dev:client  # Frontend on http://localhost:5173
 ```
 
-**Scripts**:
-- **`run-chrome.sh`**: Automatically opens the app in Chrome after starting
+**Scripts** (located in `scripts/` folder):
+- **`scripts/run-chrome.sh`**: Automatically opens the app in Chrome after starting
   - Kills processes using ports 3000, 5173, 5174, or 5175
   - Waits for server to be ready
   - Opens Chrome automatically
-- **`run.sh`**: Starts the app with port cleanup
+- **`scripts/run.sh`**: Starts the app with port cleanup
   - Kills any processes using ports 3000, 5173, 5174, or 5175
   - Installs dependencies if needed
   - Starts the application with proper error handling
@@ -95,43 +97,75 @@ npm start
 
 ### Creating Diagrams
 
-1. Click "New" to create a new diagram
-2. Right-click on canvas to add a table, or use Ctrl+N
-3. Double-click a table to edit it
-4. Drag tables to reposition them
-5. Right-click a table to create relationships or delete it
+1. Click **"New"** in the toolbar to create a new diagram
+2. **Add tables** using one of these methods:
+   - Right-click on the canvas and select "Add Table"
+   - Press `Ctrl/Cmd + N` keyboard shortcut
+   - Write SQL/DBML in the SQL Editor panel and click "Draw"
+3. **Edit tables**: Double-click a table to open the table editor
+4. **Edit columns**: Double-click a column to open the column editor
+5. **Move tables**: Click and drag tables to reposition them on the canvas
+6. **Create relationships**: Right-click a table and select "Create Relationship"
+7. **Delete tables**: Right-click a table and select "Delete", or select a table and press `Delete/Backspace`
+
+### SQL Editor
+
+The application includes a built-in SQL Editor panel on the left side:
+
+- **Write SQL/DBML**: Type SQL DDL statements or DBML syntax directly in the editor
+- **Dialect selection**: Choose between SQL or PostgreSQL (DBML) dialects
+- **Draw diagram**: Click the "Draw" button to parse SQL and generate the visual diagram
+- **Format SQL**: Use the format button to clean up your SQL code
+- **Auto-sync**: The editor automatically updates when you import diagrams
 
 ### Keyboard Shortcuts
 
 - `Ctrl/Cmd + N`: Add new table
 - `Ctrl/Cmd + S`: Save diagram
-- `Delete/Backspace`: Delete selected table
+- `Delete/Backspace`: Delete selected table (with confirmation)
 - `Escape`: Close dialogs/menus
-- `Ctrl/Cmd + /`: Show keyboard shortcuts help
-- `Ctrl/Cmd + Wheel`: Zoom in/out
-- `Right Click`: Open context menu
-- `Double Click`: Edit table/column
+- `Ctrl/Cmd + /`: Show keyboard shortcuts help dialog
+- `Ctrl/Cmd + Wheel`: Zoom in/out on canvas
+- `Right Click`: Open context menu (on canvas or table)
+- `Double Click`: Edit table or column
 
 ### Importing Diagrams
 
-1. Click "Import" in the toolbar
+1. Click **"Import"** in the toolbar
 2. Choose import method:
-   - **SQL**: Paste SQL DDL statements
-   - **JSON**: Paste JSON diagram data
-   - **File**: Upload a SQL or JSON file
+   - **Paste**: Paste SQL or JSON text directly
+   - **SQL**: Switch to SQL mode and paste SQL DDL statements
+   - **JSON**: Switch to JSON mode and paste JSON diagram data
+   - **From File**: Upload a `.sql` or `.json` file
+3. Click **"Import"** to load the diagram into the canvas
+
+The imported content will also appear in the SQL Editor panel for further editing.
 
 ### Exporting Diagrams
 
-1. Click "Export" in the toolbar
+1. Click **"Export"** in the toolbar
 2. Select export format:
-   - **JSON**: Diagram data in JSON format
-   - **SQL**: SQL DDL statements
-   - **SVG**: Vector image of the diagram
+   - **JSON**: Export diagram data in JSON format
+   - **SQL DDL**: Export as SQL CREATE TABLE statements
+   - **SVG Image**: Export as SVG vector image
+3. Click **"Export"** to download the file
 
 ### Saving and Loading
 
-1. **Save**: Click "Save" to save the current diagram to the backend
-2. **Load**: Click "Load" to see all saved diagrams and load one
+1. **Save**: Click **"Save"** in the toolbar to save the current diagram to the backend
+   - The diagram ID, metadata, and SQL editor content are all saved
+   - You'll receive a confirmation message when saved successfully
+2. **Load**: Click **"Load"** in the toolbar to:
+   - View all saved diagrams in a list
+   - Select a diagram to load
+   - The loaded diagram will appear on the canvas and in the SQL Editor
+
+## Documentation
+
+- **API Documentation**: See [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md)
+- **Changelog**: See [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
+- **Implementation Checklist**: See [`docs/IMPLEMENTATION_CHECKLIST.md`](docs/IMPLEMENTATION_CHECKLIST.md)
+- **Test Results**: See [`docs/`](docs/) for all test result files
 
 ## API Documentation
 
