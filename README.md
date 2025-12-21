@@ -98,15 +98,12 @@ npm start
 ### Creating Diagrams
 
 1. Click **"New"** in the toolbar to create a new diagram
-2. **Add tables** using one of these methods:
-   - Right-click on the canvas and select "Add Table"
-   - Press `Ctrl/Cmd + N` keyboard shortcut
-   - Write SQL/DBML in the SQL Editor panel and click "Draw"
+2. **Add tables**: Write SQL/DBML in the SQL Editor panel and click "Draw"
 3. **Edit tables**: Double-click a table to open the table editor
 4. **Edit columns**: Double-click a column to open the column editor
 5. **Move tables**: Click and drag tables to reposition them on the canvas
-6. **Create relationships**: Right-click a table and select "Create Relationship"
-7. **Delete tables**: Right-click a table and select "Delete", or select a table and press `Delete/Backspace`
+6. **Create relationships**: Use the relationship tools (to be implemented)
+7. **Delete tables**: Select a table and press `Delete/Backspace` (with confirmation)
 
 ### SQL Editor
 
@@ -120,13 +117,11 @@ The application includes a built-in SQL Editor panel on the left side:
 
 ### Keyboard Shortcuts
 
-- `Ctrl/Cmd + N`: Add new table
 - `Ctrl/Cmd + S`: Save diagram
 - `Delete/Backspace`: Delete selected table (with confirmation)
 - `Escape`: Close dialogs/menus
 - `Ctrl/Cmd + /`: Show keyboard shortcuts help dialog
 - `Ctrl/Cmd + Wheel`: Zoom in/out on canvas
-- `Right Click`: Open context menu (on canvas or table)
 - `Double Click`: Edit table or column
 
 ### Importing Diagrams
