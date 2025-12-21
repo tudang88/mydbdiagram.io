@@ -12,13 +12,11 @@ interface Shortcut {
 }
 
 const shortcuts: Shortcut[] = [
-  { keys: ['Ctrl', 'N'], description: 'Add new table' },
   { keys: ['Ctrl', 'S'], description: 'Save diagram' },
   { keys: ['Delete'], description: 'Delete selected table' },
   { keys: ['Backspace'], description: 'Delete selected table' },
   { keys: ['Escape'], description: 'Close dialogs/menus' },
   { keys: ['Ctrl', 'Wheel'], description: 'Zoom in/out' },
-  { keys: ['Right Click'], description: 'Open context menu' },
   { keys: ['Double Click'], description: 'Edit table/column' },
 ];
 
