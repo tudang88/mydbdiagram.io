@@ -9,9 +9,11 @@ import { ValidationResult, ConstraintType } from '../../types/common.types';
  * DBML Parser
  * Parses DBML (Database Markup Language) format similar to dbdiagram.io
  * Supports:
- * - Table definitions: Table table_name { ... }
- * - Column definitions: column_name type [constraints]
- * - Relationships: Ref: table1.col1 > table2.col2 or Ref: table1.col1 < table2.col2
+ * - Table definitions: Table table_name { } or Table "table_name" { }
+ * - Column definitions: column_name type [constraints] or "column_name" type [constraints]
+ * - Inline ref: ref: > "table"."column" or ref: < "table"."column" inside column [brackets]
+ * - Constraints: pk, increment, not null, unique, default: value
+ * - Standalone relationships: Ref: table1.col1 > table2.col2
  */
 export class DBMLParser implements Parser<string, Diagram> {
   /**
@@ -157,8 +159,8 @@ export class DBMLParser implements Parser<string, Diagram> {
       };
     }
 
-    // Basic validation - check for Table keyword
-    if (!input.match(/Table\s+\w+/i)) {
+    // Basic validation - check for Table keyword (with or without quoted name)
+    if (!input.match(/Table\s+(?:"[^"]+"|\w+)\s*\{/i)) {
       return {
         isValid: false,
         errors: [{ field: 'input', message: 'DBML must contain Table definitions' }],
@@ -178,8 +180,8 @@ export class DBMLParser implements Parser<string, Diagram> {
       return false;
     }
 
-    // Check for DBML patterns: Table keyword and curly braces
-    return /Table\s+\w+\s*\{/i.test(input);
+    // Check for DBML patterns: Table keyword and curly braces (with or without quoted name)
+    return /Table\s+(?:"[^"]+"|\w+)\s*\{/i.test(input);
   }
 
   /**
@@ -201,30 +203,42 @@ export class DBMLParser implements Parser<string, Diagram> {
       fromColumn: string;
       toColumn: string;
     }> = [];
+    const inlineRefs: Array<{
+      fromTableId: string;
+      fromColumnName: string;
+      toTableName: string;
+      toColumnName: string;
+      direction: '>' | '<';
+    }> = [];
     const lines = dbml.split('\n');
     let currentTable: Partial<TableData> | null = null;
     let tableIdCounter = 0;
     let columnIdCounter = 0;
-    const tableNameMap = new Map<string, string>(); // Map table name to table ID
+    const tableNameMap = new Map<string, string>(); // Map table name (lowercase) to table ID
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      let line = lines[i];
+      const trimmed = line.trim();
 
-      // Skip empty lines and comments
-      if (!line || line.startsWith('//')) {
+      // Skip empty lines and full-line comments
+      if (!trimmed || trimmed.startsWith('//')) {
         continue;
       }
 
-      // Table definition: Table table_name {
-      const tableMatch = line.match(/Table\s+(\w+)\s*\{/i);
+      // Strip inline comment for parsing (keep for column.comment)
+      const commentMatch = trimmed.match(/^(.*?)\s*\/\/(.*)$/);
+      const lineWithoutComment = commentMatch ? commentMatch[1].trim() : trimmed;
+      const inlineComment = commentMatch ? commentMatch[2].trim() : undefined;
+
+      // Table definition: Table "name" { or Table name {
+      const tableMatch = lineWithoutComment.match(/Table\s+(?:"([^"]+)"|(\w+))\s*\{/i);
       if (tableMatch) {
-        // Save previous table if exists
         if (currentTable && currentTable.name) {
           tables.push(this.finalizeTable(currentTable as Partial<TableData>));
         }
 
         tableIdCounter++;
-        const tableName = tableMatch[1];
+        const tableName = tableMatch[1] ?? tableMatch[2] ?? '';
         const tableId = `table-${tableIdCounter}`;
         tableNameMap.set(tableName.toLowerCase(), tableId);
         currentTable = {
@@ -237,7 +251,7 @@ export class DBMLParser implements Parser<string, Diagram> {
       }
 
       // End of table definition: }
-      if (line === '}' && currentTable) {
+      if (lineWithoutComment === '}' && currentTable) {
         if (currentTable.name) {
           tables.push(this.finalizeTable(currentTable as Partial<TableData>));
         }
@@ -245,22 +259,42 @@ export class DBMLParser implements Parser<string, Diagram> {
         continue;
       }
 
-      // Column definition: column_name type [constraints]
+      // Column definition: "column" type [constraints] or column type [constraints]
       if (currentTable) {
-        // Match: column_name type [note: '...'] or column_name type [constraints]
-        // Also handle: column_name type without brackets
-        const columnMatch = line.match(/^(\w+)\s+(\w+(?:\s*\([^)]+\))?)\s*(?:\[([^\]]+)\])?/);
+        const columnMatch = lineWithoutComment.match(
+          /^(?:"([^"]+)"|(\w+))\s+(\w+(?:\s*\([^)]+\))?)\s*(?:\[([^\]]*)\])?/
+        );
         if (columnMatch) {
           columnIdCounter++;
-          const columnName = columnMatch[1];
-          const columnType = columnMatch[2].trim();
-          const constraintsStr = columnMatch[3] || '';
+          const columnName = columnMatch[1] ?? columnMatch[2] ?? '';
+          const columnType = columnMatch[3].trim();
+          const constraintsStr = columnMatch[4] ?? '';
           const constraints: Array<{ type: ConstraintType; value?: string }> = [];
+          let defaultValue: string | undefined;
+          let comment: string | undefined = inlineComment;
+
+          // Parse inline ref from constraints (ref: > "table"."col" or ref: < "table"."col")
+          const refMatch = constraintsStr.match(
+            /ref:\s*([<>])\s*"([^"]+)"\s*\.\s*"([^"]+)"/i
+          );
+          if (refMatch && currentTable.id) {
+            const direction = refMatch[1] as '>' | '<';
+            inlineRefs.push({
+              fromTableId: currentTable.id,
+              fromColumnName: columnName,
+              toTableName: refMatch[2],
+              toColumnName: refMatch[3],
+              direction,
+            });
+          }
 
           // Parse constraints (case-insensitive)
           const lowerConstraints = constraintsStr.toLowerCase();
           if (lowerConstraints.includes('primary key') || lowerConstraints.includes('pk')) {
             constraints.push({ type: 'PRIMARY_KEY' });
+          }
+          if (lowerConstraints.includes('increment')) {
+            constraints.push({ type: 'AUTO_INCREMENT' });
           }
           if (lowerConstraints.includes('not null')) {
             constraints.push({ type: 'NOT_NULL' });
@@ -268,34 +302,48 @@ export class DBMLParser implements Parser<string, Diagram> {
           if (lowerConstraints.includes('unique')) {
             constraints.push({ type: 'UNIQUE' });
           }
-          // Note: 'note: ...' is just metadata, not a constraint
+
+          // Parse default: value (default: true, default: 'api', default: `CURRENT_TIMESTAMP`)
+          const defaultMatch = constraintsStr.match(/default:\s*((?:'[^']*'|`[^`]*`|\S+))/i);
+          if (defaultMatch) {
+            let raw = defaultMatch[1].trim();
+            if (raw.startsWith('`') && raw.endsWith('`')) {
+              defaultValue = raw.slice(1, -1).trim();
+            } else if (raw.startsWith("'") && raw.endsWith("'")) {
+              defaultValue = raw;
+            } else {
+              defaultValue = raw;
+            }
+          }
 
           currentTable.columns!.push({
             id: `col-${columnIdCounter}`,
             name: columnName,
             type: columnType,
             constraints,
+            defaultValue,
+            comment: comment || undefined,
           });
           continue;
         }
       }
 
-      // Relationship definition: Ref: table1.col1 > table2.col2 or Ref: table1.col1 < table2.col2
-      // Also supports: Ref name: table1.col1 > table2.col2
-      const refMatch = line.match(/Ref(?:\s+\w+)?:\s*(\w+)\.(\w+)\s*([<>])\s*(\w+)\.(\w+)/i);
-      if (refMatch) {
-        const table1Name = refMatch[1];
-        const col1Name = refMatch[2];
-        const direction = refMatch[3];
-        const table2Name = refMatch[4];
-        const col2Name = refMatch[5];
+      // Standalone relationship: Ref: table1.col1 > table2.col2 (support quoted names)
+      const standaloneRefMatch = lineWithoutComment.match(
+        /Ref(?:\s+\w+)?:\s*(?:"([^"]+)"|(\w+))\.(?:"([^"]+)"|(\w+))\s*([<>])\s*(?:"([^"]+)"|(\w+))\.(?:"([^"]+)"|(\w+))/i
+      );
+      if (standaloneRefMatch) {
+        const table1Name = (standaloneRefMatch[1] ?? standaloneRefMatch[2]) ?? '';
+        const col1Name = (standaloneRefMatch[3] ?? standaloneRefMatch[4]) ?? '';
+        const direction = standaloneRefMatch[5];
+        const table2Name = (standaloneRefMatch[6] ?? standaloneRefMatch[7]) ?? '';
+        const col2Name = (standaloneRefMatch[8] ?? standaloneRefMatch[9]) ?? '';
 
         const table1Id = tableNameMap.get(table1Name.toLowerCase());
         const table2Id = tableNameMap.get(table2Name.toLowerCase());
 
         if (table1Id && table2Id) {
           if (direction === '>') {
-            // table1.col1 > table2.col2 means table1.col1 references table2.col2
             relationships.push({
               fromTable: table1Id,
               toTable: table2Id,
@@ -303,7 +351,6 @@ export class DBMLParser implements Parser<string, Diagram> {
               toColumn: col2Name,
             });
           } else if (direction === '<') {
-            // table1.col1 < table2.col2 means table2.col2 references table1.col1
             relationships.push({
               fromTable: table2Id,
               toTable: table1Id,
@@ -316,9 +363,29 @@ export class DBMLParser implements Parser<string, Diagram> {
       }
     }
 
-    // Save last table if exists
     if (currentTable && currentTable.name) {
       tables.push(this.finalizeTable(currentTable as Partial<TableData>));
+    }
+
+    // Resolve inline refs to table IDs and add to relationships
+    for (const ref of inlineRefs) {
+      const toTableId = tableNameMap.get(ref.toTableName.toLowerCase());
+      if (!toTableId) continue;
+      if (ref.direction === '>') {
+        relationships.push({
+          fromTable: ref.fromTableId,
+          toTable: toTableId,
+          fromColumn: ref.fromColumnName,
+          toColumn: ref.toColumnName,
+        });
+      } else {
+        relationships.push({
+          fromTable: toTableId,
+          toTable: ref.fromTableId,
+          fromColumn: ref.toColumnName,
+          toColumn: ref.fromColumnName,
+        });
+      }
     }
 
     return { tables, relationships };
