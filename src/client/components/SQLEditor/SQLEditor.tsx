@@ -4,6 +4,23 @@ import { DBMLParser } from '../../core/parser/DBMLParser';
 import { Diagram } from '../../core/diagram/Diagram';
 import './SQLEditor.css';
 
+const DEFAULT_EXAMPLE_DBML = `Table users {
+  id integer [primary key]
+  username varchar
+  email varchar [unique]
+  created_at timestamp
+}
+
+Table posts {
+  id integer [primary key]
+  user_id integer [not null]
+  title varchar
+  body text
+  created_at timestamp
+}
+
+Ref: posts.user_id > users.id`;
+
 interface SQLEditorProps {
   diagram: Diagram | null;
   onDiagramChange: (diagram: Diagram) => void;
@@ -21,7 +38,7 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
   initialText,
   onTextChange,
 }) => {
-  const [sqlText, setSqlText] = useState('');
+  const [sqlText, setSqlText] = useState(DEFAULT_EXAMPLE_DBML);
   const [error, setError] = useState<string | null>(null);
   const [lineNumbers, setLineNumbers] = useState<number[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -53,29 +70,9 @@ export const SQLEditor: React.FC<SQLEditorProps> = ({
     }
   }, [diagram, initialText]);
 
-  // Initialize with example SQL/DBML if editor is empty
+  // Auto-focus editor on first render so first paste works immediately.
   useEffect(() => {
-    if (!sqlText && !diagram) {
-      // Use DBML format as default (similar to dbdiagram.io)
-      const exampleDBML = `Table users {
-  id integer [primary key]
-  username varchar
-  email varchar [unique]
-  created_at timestamp
-}
-
-Table posts {
-  id integer [primary key]
-  user_id integer [not null]
-  title varchar
-  body text
-  created_at timestamp
-}
-
-Ref: posts.user_id > users.id`;
-      setSqlText(exampleDBML);
-      // Don't auto-parse - user must click "Draw" button
-    }
+    textareaRef.current?.focus();
   }, []);
 
   // Update line numbers when SQL text changes
@@ -185,6 +182,7 @@ Ref: posts.user_id > users.id`;
           ref={textareaRef}
           className={`sql-textarea ${error ? 'error' : ''}`}
           value={sqlText}
+          autoFocus
           onChange={e => handleSQLChange(e.target.value)}
           onScroll={handleScroll}
           placeholder={
