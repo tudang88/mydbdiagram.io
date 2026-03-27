@@ -217,7 +217,7 @@ export class DBMLParser implements Parser<string, Diagram> {
     const tableNameMap = new Map<string, string>(); // Map table name (lowercase) to table ID
 
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
+      const line = lines[i];
       const trimmed = line.trim();
 
       // Skip empty lines and full-line comments
@@ -271,12 +271,10 @@ export class DBMLParser implements Parser<string, Diagram> {
           const constraintsStr = columnMatch[4] ?? '';
           const constraints: Array<{ type: ConstraintType; value?: string }> = [];
           let defaultValue: string | undefined;
-          let comment: string | undefined = inlineComment;
+          const comment: string | undefined = inlineComment;
 
           // Parse inline ref from constraints (ref: > "table"."col" or ref: < "table"."col")
-          const refMatch = constraintsStr.match(
-            /ref:\s*([<>])\s*"([^"]+)"\s*\.\s*"([^"]+)"/i
-          );
+          const refMatch = constraintsStr.match(/ref:\s*([<>])\s*"([^"]+)"\s*\.\s*"([^"]+)"/i);
           if (refMatch && currentTable.id) {
             const direction = refMatch[1] as '>' | '<';
             inlineRefs.push({
@@ -306,7 +304,7 @@ export class DBMLParser implements Parser<string, Diagram> {
           // Parse default: value (default: true, default: 'api', default: `CURRENT_TIMESTAMP`)
           const defaultMatch = constraintsStr.match(/default:\s*((?:'[^']*'|`[^`]*`|\S+))/i);
           if (defaultMatch) {
-            let raw = defaultMatch[1].trim();
+            const raw = defaultMatch[1].trim();
             if (raw.startsWith('`') && raw.endsWith('`')) {
               defaultValue = raw.slice(1, -1).trim();
             } else if (raw.startsWith("'") && raw.endsWith("'")) {
@@ -333,11 +331,11 @@ export class DBMLParser implements Parser<string, Diagram> {
         /Ref(?:\s+\w+)?:\s*(?:"([^"]+)"|(\w+))\.(?:"([^"]+)"|(\w+))\s*([<>])\s*(?:"([^"]+)"|(\w+))\.(?:"([^"]+)"|(\w+))/i
       );
       if (standaloneRefMatch) {
-        const table1Name = (standaloneRefMatch[1] ?? standaloneRefMatch[2]) ?? '';
-        const col1Name = (standaloneRefMatch[3] ?? standaloneRefMatch[4]) ?? '';
+        const table1Name = standaloneRefMatch[1] ?? standaloneRefMatch[2] ?? '';
+        const col1Name = standaloneRefMatch[3] ?? standaloneRefMatch[4] ?? '';
         const direction = standaloneRefMatch[5];
-        const table2Name = (standaloneRefMatch[6] ?? standaloneRefMatch[7]) ?? '';
-        const col2Name = (standaloneRefMatch[8] ?? standaloneRefMatch[9]) ?? '';
+        const table2Name = standaloneRefMatch[6] ?? standaloneRefMatch[7] ?? '';
+        const col2Name = standaloneRefMatch[8] ?? standaloneRefMatch[9] ?? '';
 
         const table1Id = tableNameMap.get(table1Name.toLowerCase());
         const table2Id = tableNameMap.get(table2Name.toLowerCase());

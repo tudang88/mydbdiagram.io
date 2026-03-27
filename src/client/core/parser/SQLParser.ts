@@ -179,8 +179,15 @@ export class SQLParser implements Parser<string, Diagram> {
       fromColumn: string;
       toColumn: string;
     }> = [];
+    const pendingRelationships: Array<{
+      fromTableName: string;
+      fromColumn: string;
+      toTableName: string;
+      toColumn: string;
+    }> = [];
     const lines = sql.split('\n');
     let currentTable: Partial<TableData> | null = null;
+    let currentTableName = '';
     let tableIdCounter = 0;
     let columnIdCounter = 0;
     const tableNameMap = new Map<string, string>(); // Map table name to table ID
@@ -203,6 +210,7 @@ export class SQLParser implements Parser<string, Diagram> {
           const tableName = match[1];
           const tableId = `table-${tableIdCounter}`;
           tableNameMap.set(tableName.toLowerCase(), tableId);
+          currentTableName = tableName;
           currentTable = {
             id: tableId,
             name: tableName,
@@ -213,34 +221,24 @@ export class SQLParser implements Parser<string, Diagram> {
       }
       // FOREIGN KEY definition (standalone only, inline is handled in column definition)
       else if (upperLine.startsWith('FOREIGN KEY')) {
-        if (currentTable) {
-          // Parse FOREIGN KEY (column_name) REFERENCES table_name(column_name)
-          const fkMatch = line.match(
-            /FOREIGN\s+KEY\s*\([`"]?(\w+)[`"]?\)\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
-          );
-          if (fkMatch) {
-            const fromColumn = fkMatch[1];
-            const toTableName = fkMatch[2];
-            const toColumn = fkMatch[3];
-            const toTableId = tableNameMap.get(toTableName.toLowerCase());
-            if (toTableId && currentTable.id) {
-              relationships.push({
-                fromTable: currentTable.id,
-                toTable: toTableId,
-                fromColumn,
-                toColumn,
-              });
-              // Add FOREIGN_KEY constraint to the column
-              const column = currentTable.columns?.find(c => c.name === fromColumn);
-              if (column) {
-                column.constraints.push({
-                  type: 'FOREIGN_KEY',
-                  value: `${toTableName}.${toColumn}`,
-                });
-              }
-            }
-          }
-        }
+        this.collectTableLevelForeignKey(
+          line,
+          currentTable,
+          currentTableName,
+          pendingRelationships
+        );
+      }
+      // CONSTRAINT definition (FOREIGN KEY / PRIMARY KEY / UNIQUE)
+      else if (upperLine.startsWith('CONSTRAINT')) {
+        this.collectConstraintLine(line, currentTable, currentTableName, pendingRelationships);
+      }
+      // PRIMARY KEY definition (table-level)
+      else if (upperLine.startsWith('PRIMARY KEY')) {
+        this.applyTableConstraintToColumns(line, currentTable, 'PRIMARY_KEY');
+      }
+      // UNIQUE definition (table-level)
+      else if (upperLine.startsWith('UNIQUE')) {
+        this.applyTableConstraintToColumns(line, currentTable, 'UNIQUE');
       }
       // Column definition
       else if (
@@ -249,6 +247,7 @@ export class SQLParser implements Parser<string, Diagram> {
         !upperLine.startsWith('PRIMARY KEY') &&
         !upperLine.startsWith('FOREIGN KEY') &&
         !upperLine.startsWith('CONSTRAINT') &&
+        !upperLine.startsWith('UNIQUE') &&
         !line.startsWith(')')
       ) {
         // Check for inline FOREIGN KEY: column_name TYPE REFERENCES table_name(column_name)
@@ -260,7 +259,6 @@ export class SQLParser implements Parser<string, Diagram> {
           const columnType = inlineFkMatch[2];
           const toTableName = inlineFkMatch[3];
           const toColumn = inlineFkMatch[4];
-          const toTableId = tableNameMap.get(toTableName.toLowerCase());
           const constraints: Array<{ type: ConstraintType; value?: string }> = [];
 
           // Check for constraints
@@ -291,11 +289,11 @@ export class SQLParser implements Parser<string, Diagram> {
           });
 
           // Add relationship
-          if (toTableId && currentTable.id) {
-            relationships.push({
-              fromTable: currentTable.id,
-              toTable: toTableId,
+          if (currentTableName) {
+            pendingRelationships.push({
+              fromTableName: currentTableName,
               fromColumn: columnName,
+              toTableName,
               toColumn,
             });
           }
@@ -336,6 +334,7 @@ export class SQLParser implements Parser<string, Diagram> {
         if (currentTable && currentTable.name) {
           tables.push(this.finalizeTable(currentTable as Partial<TableData>));
           currentTable = null;
+          currentTableName = '';
         }
       }
       // ALTER TABLE statements (for FOREIGN KEY constraints added after table creation)
@@ -352,42 +351,7 @@ export class SQLParser implements Parser<string, Diagram> {
           const toTableName = alterTableMatch[3];
           const toColumn = alterTableMatch[4];
 
-          const fromTableId = tableNameMap.get(fromTableName.toLowerCase());
-          const toTableId = tableNameMap.get(toTableName.toLowerCase());
-
-          if (fromTableId && toTableId) {
-            // Add relationship
-            relationships.push({
-              fromTable: fromTableId,
-              toTable: toTableId,
-              fromColumn,
-              toColumn,
-            });
-
-            // Find the table and add FOREIGN_KEY constraint to the column
-            const fromTable = tables.find(t => t.id === fromTableId);
-            if (fromTable) {
-              const column = fromTable.columns.find(c => c.name === fromColumn);
-              if (column) {
-                // Check if FOREIGN_KEY constraint already exists
-                const hasFkConstraint = column.constraints.some(c => c.type === 'FOREIGN_KEY');
-                if (!hasFkConstraint) {
-                  column.constraints.push({
-                    type: 'FOREIGN_KEY',
-                    value: `${toTableName}.${toColumn}`,
-                  });
-                }
-              }
-            }
-
-            console.log(
-              `✅ Parsed ALTER TABLE relationship: ${fromTableName}.${fromColumn} -> ${toTableName}.${toColumn}`
-            );
-          } else {
-            console.warn(
-              `⚠️ ALTER TABLE: Table not found - fromTable: ${fromTableName} (${fromTableId}), toTable: ${toTableName} (${toTableId})`
-            );
-          }
+          pendingRelationships.push({ fromTableName, fromColumn, toTableName, toColumn });
         }
       }
     }
@@ -397,7 +361,142 @@ export class SQLParser implements Parser<string, Diagram> {
       tables.push(this.finalizeTable(currentTable as Partial<TableData>));
     }
 
+    this.resolveRelationships(tables, tableNameMap, pendingRelationships, relationships);
+
     return { tables, relationships };
+  }
+
+  private resolveRelationships(
+    tables: TableData[],
+    tableNameMap: Map<string, string>,
+    pendingRelationships: Array<{
+      fromTableName: string;
+      fromColumn: string;
+      toTableName: string;
+      toColumn: string;
+    }>,
+    relationships: Array<{
+      fromTable: string;
+      toTable: string;
+      fromColumn: string;
+      toColumn: string;
+    }>
+  ): void {
+    pendingRelationships.forEach(rel => {
+      const fromTableId = tableNameMap.get(rel.fromTableName.toLowerCase());
+      const toTableId = tableNameMap.get(rel.toTableName.toLowerCase());
+      if (!fromTableId || !toTableId) {
+        return;
+      }
+
+      relationships.push({
+        fromTable: fromTableId,
+        toTable: toTableId,
+        fromColumn: rel.fromColumn,
+        toColumn: rel.toColumn,
+      });
+
+      const fromTable = tables.find(t => t.id === fromTableId);
+      const fromColumn = fromTable?.columns.find(c => c.name === rel.fromColumn);
+      if (!fromColumn) {
+        return;
+      }
+
+      const hasFkConstraint = fromColumn.constraints.some(c => c.type === 'FOREIGN_KEY');
+      if (!hasFkConstraint) {
+        fromColumn.constraints.push({
+          type: 'FOREIGN_KEY',
+          value: `${rel.toTableName}.${rel.toColumn}`,
+        });
+      }
+    });
+  }
+
+  private collectTableLevelForeignKey(
+    line: string,
+    currentTable: Partial<TableData> | null,
+    currentTableName: string,
+    pendingRelationships: Array<{
+      fromTableName: string;
+      fromColumn: string;
+      toTableName: string;
+      toColumn: string;
+    }>
+  ): void {
+    if (!currentTable || !currentTableName) {
+      return;
+    }
+
+    const fkMatch = line.match(
+      /FOREIGN\s+KEY\s*\([`"]?(\w+)[`"]?\)\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
+    );
+    if (!fkMatch) {
+      return;
+    }
+
+    pendingRelationships.push({
+      fromTableName: currentTableName,
+      fromColumn: fkMatch[1],
+      toTableName: fkMatch[2],
+      toColumn: fkMatch[3],
+    });
+  }
+
+  private collectConstraintLine(
+    line: string,
+    currentTable: Partial<TableData> | null,
+    currentTableName: string,
+    pendingRelationships: Array<{
+      fromTableName: string;
+      fromColumn: string;
+      toTableName: string;
+      toColumn: string;
+    }>
+  ): void {
+    const upperLine = line.toUpperCase();
+    if (upperLine.includes('FOREIGN KEY')) {
+      this.collectTableLevelForeignKey(line, currentTable, currentTableName, pendingRelationships);
+      return;
+    }
+    if (upperLine.includes('PRIMARY KEY')) {
+      this.applyTableConstraintToColumns(line, currentTable, 'PRIMARY_KEY');
+      return;
+    }
+    if (upperLine.includes('UNIQUE')) {
+      this.applyTableConstraintToColumns(line, currentTable, 'UNIQUE');
+    }
+  }
+
+  private applyTableConstraintToColumns(
+    line: string,
+    currentTable: Partial<TableData> | null,
+    constraintType: ConstraintType
+  ): void {
+    if (!currentTable?.columns) {
+      return;
+    }
+
+    const columnsMatch = line.match(/\(([^)]+)\)/);
+    if (!columnsMatch) {
+      return;
+    }
+
+    const columnNames = columnsMatch[1]
+      .split(',')
+      .map(col => col.replace(/[`"\s]/g, ''))
+      .filter(Boolean);
+
+    columnNames.forEach(columnName => {
+      const column = currentTable.columns?.find(c => c.name === columnName);
+      if (!column) {
+        return;
+      }
+
+      const alreadyExists = column.constraints.some(c => c.type === constraintType);
+      if (!alreadyExists) {
+        column.constraints.push({ type: constraintType });
+      }
+    });
   }
 
   /**
