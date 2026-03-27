@@ -113,9 +113,18 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
                       NOT_NULL: 'NN',
                       UNIQUE: 'UQ',
                     };
+                    const classByType: Record<string, string> = {
+                      PRIMARY_KEY: 'constraint-badge-pk',
+                      FOREIGN_KEY: 'constraint-badge-fk',
+                      NOT_NULL: 'constraint-badge-nn',
+                      UNIQUE: 'constraint-badge-uq',
+                    };
                     const label = labelByType[c.type] || c.type;
                     return (
-                      <span key={`${column.id}-constraint-${index}`} className="constraint-badge">
+                      <span
+                        key={`${column.id}-constraint-${index}`}
+                        className={`constraint-badge ${classByType[c.type] || ''}`}
+                      >
                         {label}
                       </span>
                     );

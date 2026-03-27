@@ -118,3 +118,27 @@
   font-weight: 600;
   line-height: 1;
 }
+
+.constraint-badge-pk {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.constraint-badge-fk {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.constraint-badge-nn {
+  border-color: #fda4af;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.constraint-badge-uq {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
