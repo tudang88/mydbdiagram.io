@@ -22,6 +22,7 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
   onDragEnd,
 }) => {
   const position = table.getPosition();
+  const metadata = table.getMetadata();
   const columns = table.getAllColumns();
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,6 +95,11 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
     >
       <div className="table-header">
         <h3 className="table-name">{table.getName()}</h3>
+        {metadata?.description && (
+          <div className="table-description" title={metadata.description}>
+            {metadata.description}
+          </div>
+        )}
       </div>
       <div className="table-body">
         <div className="table-columns">
@@ -103,7 +109,11 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
                 <span className="column-name">{column.name}</span>
                 <span className="column-type">{column.type}</span>
               </div>
-              {column.comment && <span className="column-comment">{column.comment}</span>}
+              {column.comment && (
+                <span className="column-comment" title={column.comment}>
+                  {column.comment}
+                </span>
+              )}
               {column.constraints.length > 0 && (
                 <span className="column-constraints">
                   {column.constraints.map((c, index) => {
@@ -160,6 +170,12 @@ export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
 
   // If position changed, need to re-render
   if (positionChanged) {
+    return false;
+  }
+
+  const prevDescription = prevProps.table.getMetadata()?.description || '';
+  const nextDescription = nextProps.table.getMetadata()?.description || '';
+  if (prevDescription !== nextDescription) {
     return false;
   }
 
