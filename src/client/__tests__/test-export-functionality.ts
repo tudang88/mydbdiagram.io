@@ -11,6 +11,7 @@ import { ExportService } from '../services/ExportService';
 import { ApiClient } from '../services/ApiClient';
 import { Diagram } from '../core/diagram/Diagram';
 import { Table } from '../core/table/Table';
+import { FrontendExporter } from '../core/exporter/FrontendExporter';
 
 async function testExportDialogLogic(): Promise<void> {
   console.log('\n🧪 Testing ExportDialog Logic...');
@@ -295,6 +296,50 @@ async function testExportFormats(): Promise<void> {
   console.log('✅ Format-specific handling working');
 }
 
+async function testFrontendSvgMatchesCurrentErdStyle(): Promise<void> {
+  console.log('\n🧪 Testing Frontend SVG style parity...');
+
+  const exporter = new FrontendExporter();
+  const diagram = Diagram.create('svg-style-test');
+  const table = new Table(
+    'table-1',
+    'm_companies',
+    { x: 100, y: 100 },
+    [
+      {
+        id: 'col-1',
+        name: 'company_name',
+        type: 'VARCHAR(42)',
+        constraints: [{ type: 'NOT_NULL' }, { type: 'UNIQUE' }],
+        comment: '長いコメントは省略される可能性あり',
+      },
+      {
+        id: 'col-2',
+        name: 'abbr',
+        type: 'CHAR(3)',
+        constraints: [],
+        comment: '会社名',
+      },
+    ],
+    { description: '会社マスター' }
+  );
+  diagram.addTable(table);
+
+  const result = exporter.exportSVG(diagram);
+  if (!result.success || !result.data) {
+    throw new Error('Frontend SVG export failed');
+  }
+
+  // Ensure SVG includes latest constraint labels and column comment text
+  if (!result.data.includes('NN') || !result.data.includes('UQ')) {
+    throw new Error('SVG should include NN/UQ constraint labels');
+  }
+  if (!result.data.includes('会社名')) {
+    throw new Error('SVG should include column comments');
+  }
+  console.log('✅ Frontend SVG style parity working');
+}
+
 async function runTests(): Promise<void> {
   try {
     await testExportDialogLogic();
@@ -304,6 +349,7 @@ async function runTests(): Promise<void> {
     await testExportErrorHandling();
     await testExportIntegration();
     await testExportFormats();
+    await testFrontendSvgMatchesCurrentErdStyle();
 
     console.log('\n✅ All export functionality tests passed!');
   } catch (error) {

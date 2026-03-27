@@ -131,14 +131,74 @@ export class FrontendExporter {
     try {
       const diagramData = diagram.toJSON();
       const padding = 50;
-      // Match canvas dimensions exactly
-      const TABLE_WIDTH = 200;
+      const MIN_TABLE_WIDTH = 200;
       const TABLE_HEADER_HEIGHT = 40;
       const COLUMN_HEIGHT = 30;
       const MARKER_ONE_OFFSET = 10;
       const MARKER_MANY_OFFSET = 1;
       const MARKER_SIZE = 12;
       const HORIZONTAL_OFFSET = Math.max(40, MARKER_ONE_OFFSET + MARKER_SIZE + 15);
+
+      // Text width approximation helpers for layout parity.
+      const estimateTextWidth = (text: string, fontSize: number): number =>
+        text.length * (fontSize * 0.56);
+      const truncateText = (text: string, maxWidth: number, fontSize: number): string => {
+        if (maxWidth <= 0) return '';
+        if (estimateTextWidth(text, fontSize) <= maxWidth) return text;
+        const ellipsis = '...';
+        const ellipsisWidth = estimateTextWidth(ellipsis, fontSize);
+        if (ellipsisWidth > maxWidth) return '';
+
+        let output = text;
+        while (
+          output.length > 0 &&
+          estimateTextWidth(output, fontSize) + ellipsisWidth > maxWidth
+        ) {
+          output = output.slice(0, -1);
+        }
+        return output ? `${output}${ellipsis}` : '';
+      };
+
+      // Calculate dynamic width per table so export matches ERD better.
+      const tableWidthById = new Map<string, number>();
+      diagramData.tables.forEach(table => {
+        const leftPadding = 12;
+        const rightPadding = 8;
+        const nameTypeGap = 8;
+        const typeCommentGap = 8;
+        const commentGap = 8;
+        const badgeWidth = 22;
+        const badgeGap = 4;
+        const maxCommentWidth = 280;
+
+        const headerWidth = estimateTextWidth(table.name, 14) + 24;
+        let maxRowWidth = 0;
+
+        table.columns.forEach(column => {
+          const nameWidth = estimateTextWidth(column.name, 12);
+          const typeWidth = estimateTextWidth(column.type, 11);
+          const commentWidth = column.comment
+            ? Math.min(maxCommentWidth, estimateTextWidth(column.comment, 11))
+            : 0;
+          const badgesWidth =
+            column.constraints.length > 0
+              ? column.constraints.length * badgeWidth + (column.constraints.length - 1) * badgeGap
+              : 0;
+
+          const rowWidth =
+            leftPadding +
+            nameWidth +
+            nameTypeGap +
+            typeWidth +
+            (commentWidth > 0 ? typeCommentGap + commentWidth : 0) +
+            (badgesWidth > 0 ? commentGap + badgesWidth : 0) +
+            rightPadding;
+          maxRowWidth = Math.max(maxRowWidth, rowWidth);
+        });
+
+        const tableWidth = Math.max(MIN_TABLE_WIDTH, Math.ceil(Math.max(headerWidth, maxRowWidth)));
+        tableWidthById.set(table.id, tableWidth);
+      });
 
       // Calculate bounds
       let minX = Infinity;
@@ -149,10 +209,11 @@ export class FrontendExporter {
       diagramData.tables.forEach(table => {
         const x = table.position.x;
         const y = table.position.y;
+        const tableWidth = tableWidthById.get(table.id) || MIN_TABLE_WIDTH;
         const height = TABLE_HEADER_HEIGHT + table.columns.length * COLUMN_HEIGHT;
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + TABLE_WIDTH);
+        maxX = Math.max(maxX, x + tableWidth);
         maxY = Math.max(maxY, y + height);
       });
 
@@ -164,17 +225,31 @@ export class FrontendExporter {
       svg.push(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`);
       svg.push(`<rect width="${width}" height="${height}" fill="white"/>`);
 
-      // Helper function to get constraint icons
-      const getConstraintIcons = (constraints: Array<{ type: string }>): string => {
-        return constraints
-          .map(c => {
-            if (c.type === 'PRIMARY_KEY') return '🔑';
-            if (c.type === 'FOREIGN_KEY') return '🔗';
-            if (c.type === 'NOT_NULL') return '!';
-            if (c.type === 'UNIQUE') return 'U';
-            return '';
-          })
-          .join('');
+      // Helper functions for constraint badge rendering (match TableNode)
+      const getConstraintLabel = (type: string): string => {
+        if (type === 'PRIMARY_KEY') return 'PK';
+        if (type === 'FOREIGN_KEY') return 'FK';
+        if (type === 'NOT_NULL') return 'NN';
+        if (type === 'UNIQUE') return 'UQ';
+        return type;
+      };
+
+      const getConstraintColors = (
+        type: string
+      ): { fill: string; stroke: string; text: string } => {
+        if (type === 'PRIMARY_KEY') {
+          return { fill: '#fffbeb', stroke: '#f59e0b', text: '#92400e' };
+        }
+        if (type === 'FOREIGN_KEY') {
+          return { fill: '#eff6ff', stroke: '#60a5fa', text: '#1d4ed8' };
+        }
+        if (type === 'NOT_NULL') {
+          return { fill: '#fff1f2', stroke: '#fda4af', text: '#be123c' };
+        }
+        if (type === 'UNIQUE') {
+          return { fill: '#f5f3ff', stroke: '#c4b5fd', text: '#6d28d9' };
+        }
+        return { fill: '#f9fafb', stroke: '#d1d5db', text: '#374151' };
       };
 
       // Helper function to render ONE marker
@@ -225,6 +300,8 @@ export class FrontendExporter {
           x: toTable.position.x - minX + padding,
           y: toTable.position.y - minY + padding,
         };
+        const fromTableWidth = tableWidthById.get(fromTable.id) || MIN_TABLE_WIDTH;
+        const toTableWidth = tableWidthById.get(toTable.id) || MIN_TABLE_WIDTH;
 
         const fromColumnY =
           fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
@@ -232,12 +309,12 @@ export class FrontendExporter {
           toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
 
         const fromLeft = fromPos.x;
-        const fromRight = fromPos.x + TABLE_WIDTH;
+        const fromRight = fromPos.x + fromTableWidth;
         const toLeft = toPos.x;
-        const toRight = toPos.x + TABLE_WIDTH;
+        const toRight = toPos.x + toTableWidth;
 
-        const fromCenterX = fromPos.x + TABLE_WIDTH / 2;
-        const toCenterX = toPos.x + TABLE_WIDTH / 2;
+        const fromCenterX = fromPos.x + fromTableWidth / 2;
+        const toCenterX = toPos.x + toTableWidth / 2;
 
         const relationshipType = relationship.type;
         const isFirstTable = (tableId: string) => tableId === 'table-1';
@@ -323,34 +400,87 @@ export class FrontendExporter {
       diagramData.tables.forEach(table => {
         const x = table.position.x - minX + padding;
         const y = table.position.y - minY + padding;
+        const tableWidth = tableWidthById.get(table.id) || MIN_TABLE_WIDTH;
         const tableHeight = TABLE_HEADER_HEIGHT + table.columns.length * COLUMN_HEIGHT;
 
         // Table rectangle (white background, gray border)
         svg.push(
-          `<rect x="${x}" y="${y}" width="${TABLE_WIDTH}" height="${tableHeight}" fill="white" stroke="#ddd" stroke-width="2" rx="4"/>`
+          `<rect x="${x}" y="${y}" width="${tableWidth}" height="${tableHeight}" fill="white" stroke="#ddd" stroke-width="2" rx="4"/>`
         );
 
         // Table header (light gray background, match canvas)
         svg.push(
-          `<rect x="${x}" y="${y}" width="${TABLE_WIDTH}" height="${TABLE_HEADER_HEIGHT}" fill="#f8f9fa" stroke="#ddd" stroke-width="1" rx="4 4 0 0"/>`
+          `<rect x="${x}" y="${y}" width="${tableWidth}" height="${TABLE_HEADER_HEIGHT}" fill="#f8f9fa" stroke="#ddd" stroke-width="1" rx="4 4 0 0"/>`
         );
         svg.push(
-          `<text x="${x + TABLE_WIDTH / 2}" y="${y + TABLE_HEADER_HEIGHT / 2 + 5}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
+          `<text x="${x + tableWidth / 2}" y="${y + TABLE_HEADER_HEIGHT / 2 + 5}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
         );
 
-        // Columns
+        // Columns (match TableNode row layout: name + type (left), comment + badges (right))
         table.columns.forEach((column, index) => {
           const colY = y + TABLE_HEADER_HEIGHT + index * COLUMN_HEIGHT;
-          const constraintIcons = getConstraintIcons(column.constraints);
-          const colText = `${column.name} ${column.type}${constraintIcons ? ' ' + constraintIcons : ''}`;
+          const rowCenterY = colY + COLUMN_HEIGHT / 2;
+          const textY = rowCenterY + 4;
+          const leftPadding = 12;
+          const typeStartX = x + 96;
+          const typeToCommentGap = 8;
+
+          // Right side: constraints badges
+          const badgeWidth = 22;
+          const badgeHeight = 16;
+          const badgeGap = 4;
+          const badgeRightPadding = 8;
+          const badgeTop = rowCenterY - badgeHeight / 2;
+          const badgeCount = column.constraints.length;
+          const badgesWidth =
+            badgeCount > 0 ? badgeCount * badgeWidth + (badgeCount - 1) * badgeGap : 0;
+          const badgesStartX = x + tableWidth - badgeRightPadding - badgesWidth;
+          const commentRightX = badgeCount > 0 ? badgesStartX - 8 : x + tableWidth - 8;
+
+          // Truncate left-side texts based on available area to avoid overlaps.
+          const nameMaxWidth = Math.max(0, typeStartX - (x + leftPadding) - 8);
+          const nameText = truncateText(column.name, nameMaxWidth, 12);
+          const typeMaxWidth = Math.max(0, commentRightX - typeStartX - typeToCommentGap);
+          const typeText = truncateText(column.type, typeMaxWidth, 11);
 
           svg.push(
-            `<text x="${x + 12}" y="${colY + COLUMN_HEIGHT / 2 + 4}" fill="#333" font-size="12" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(colText)}</text>`
+            `<text x="${x + leftPadding}" y="${textY}" fill="#333" font-size="12" font-weight="500" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(nameText)}</text>`
           );
+          if (typeText) {
+            svg.push(
+              `<text x="${typeStartX}" y="${textY}" fill="#666" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${this.escapeXML(typeText)}</text>`
+            );
+          }
+
+          column.constraints.forEach((constraint, constraintIndex) => {
+            const badgeX = badgesStartX + constraintIndex * (badgeWidth + badgeGap);
+            const colors = getConstraintColors(constraint.type);
+            const label = getConstraintLabel(constraint.type);
+
+            svg.push(
+              `<rect x="${badgeX}" y="${badgeTop}" width="${badgeWidth}" height="${badgeHeight}" rx="4" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="1"/>`
+            );
+            svg.push(
+              `<text x="${badgeX + badgeWidth / 2}" y="${textY - 0.5}" text-anchor="middle" fill="${colors.text}" font-size="10" font-weight="600" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(label)}</text>`
+            );
+          });
+
+          // Comment between type and badges (right aligned)
+          if (column.comment) {
+            const typeEndX = typeStartX + (typeText ? estimateTextWidth(typeText, 11) : 0);
+            const commentLeftLimit = typeEndX + 8;
+            const commentMaxWidth = Math.max(0, commentRightX - commentLeftLimit);
+            const commentText = truncateText(column.comment, commentMaxWidth, 11);
+            if (commentText) {
+              svg.push(
+                `<text x="${commentRightX}" y="${textY}" text-anchor="end" fill="#6b7280" font-size="11" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(commentText)}</text>`
+              );
+            }
+          }
 
           if (index < table.columns.length - 1) {
             svg.push(
-              `<line x1="${x}" y1="${colY + COLUMN_HEIGHT}" x2="${x + TABLE_WIDTH}" y2="${colY + COLUMN_HEIGHT}" stroke="#f0f0f0" stroke-width="1"/>`
+              `<line x1="${x}" y1="${colY + COLUMN_HEIGHT}" x2="${x + tableWidth}" y2="${colY + COLUMN_HEIGHT}" stroke="#f0f0f0" stroke-width="1"/>`
             );
           }
         });
