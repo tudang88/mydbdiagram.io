@@ -30,7 +30,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   const MARKER_MANY_OFFSET = 1; // Distance from table edge to MANY marker (sát với cạnh table)
   const MARKER_SIZE = 12; // Approximate marker size (for calculation)
   const TABLE_EDGE_GAP_LEFT = 4; // Keep anchors outside left border
-  const TABLE_EDGE_GAP_RIGHT = 10; // Keep anchors outside right border (avoids overlap under table)
+  const TABLE_EDGE_GAP_RIGHT = 6; // Keep anchors outside right border with tighter spacing
 
   // Calculate orthogonal path (right-angle routing) from column positions (like dbdiagram.io)
   // Include position keys in dependencies to ensure recalculation when table moves
