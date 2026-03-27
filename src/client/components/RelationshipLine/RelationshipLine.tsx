@@ -248,7 +248,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         y1={y - lineLength / 2}
         x2={x}
         y2={y + lineLength / 2}
-        stroke="#666"
+        stroke="#4b5563"
         strokeWidth="1.5"
       />
     );
@@ -262,7 +262,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     if (direction === 'right') {
       // Right-pointing arrow: two lines forming >
       return (
-        <g key={`many-${x}-${y}`} stroke="#666" strokeWidth="1.5" fill="none">
+        <g key={`many-${x}-${y}`} stroke="#4b5563" strokeWidth="1.5" fill="none">
           {/* Top diagonal line */}
           <line x1={x} y1={y - halfSize} x2={x + arrowSize} y2={y} />
           {/* Bottom diagonal line */}
@@ -272,7 +272,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     } else {
       // Left-pointing arrow: two lines forming <
       return (
-        <g key={`many-${x}-${y}`} stroke="#666" strokeWidth="1.5" fill="none">
+        <g key={`many-${x}-${y}`} stroke="#4b5563" strokeWidth="1.5" fill="none">
           {/* Top diagonal line */}
           <line x1={x} y1={y - halfSize} x2={x - arrowSize} y2={y} />
           {/* Bottom diagonal line */}
@@ -324,7 +324,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         d={pathData.path}
         className={`relationship-line-${lineStyle}`}
         strokeWidth={1}
-        stroke="#666"
+        stroke="#4b5563"
         fill="none"
       />
       {/* Markers rendered separately for flexible positioning */}
@@ -360,7 +360,7 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
           cx={pathData.pathStartX}
           cy={pathData.pathStartY}
           r={4}
-          fill="#666"
+          fill="#4b5563"
           className="optional-marker"
         />
       )}
