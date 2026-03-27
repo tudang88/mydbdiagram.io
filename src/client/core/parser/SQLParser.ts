@@ -185,6 +185,8 @@ export class SQLParser implements Parser<string, Diagram> {
       toTableName: string;
       toColumn: string;
     }> = [];
+    const tableComments = new Map<string, string>();
+    const columnComments = new Map<string, string>();
     const lines = sql.split('\n');
     let currentTable: Partial<TableData> | null = null;
     let currentTableName = '';
@@ -217,6 +219,29 @@ export class SQLParser implements Parser<string, Diagram> {
             position: { x: 100 + (tableIdCounter - 1) * 300, y: 100 },
             columns: [],
           };
+        }
+      }
+      // COMMENT ON TABLE table_name IS '...'
+      else if (upperLine.startsWith('COMMENT ON TABLE')) {
+        const tableCommentMatch = line.match(
+          /COMMENT\s+ON\s+TABLE\s+[`"]?(\w+)[`"]?\s+IS\s+'((?:''|[^'])*)'/i
+        );
+        if (tableCommentMatch) {
+          const tableName = tableCommentMatch[1];
+          const comment = this.parseSqlStringLiteral(tableCommentMatch[2]);
+          tableComments.set(tableName.toLowerCase(), comment);
+        }
+      }
+      // COMMENT ON COLUMN table_name.column_name IS '...'
+      else if (upperLine.startsWith('COMMENT ON COLUMN')) {
+        const columnCommentMatch = line.match(
+          /COMMENT\s+ON\s+COLUMN\s+[`"]?(\w+)[`"]?\.[`"]?(\w+)[`"]?\s+IS\s+'((?:''|[^'])*)'/i
+        );
+        if (columnCommentMatch) {
+          const tableName = columnCommentMatch[1];
+          const columnName = columnCommentMatch[2];
+          const comment = this.parseSqlStringLiteral(columnCommentMatch[3]);
+          columnComments.set(`${tableName.toLowerCase()}.${columnName.toLowerCase()}`, comment);
         }
       }
       // FOREIGN KEY definition (standalone only, inline is handled in column definition)
@@ -362,8 +387,38 @@ export class SQLParser implements Parser<string, Diagram> {
     }
 
     this.resolveRelationships(tables, tableNameMap, pendingRelationships, relationships);
+    this.applyCommentsToTables(tables, tableComments, columnComments);
 
     return { tables, relationships };
+  }
+
+  private applyCommentsToTables(
+    tables: TableData[],
+    tableComments: Map<string, string>,
+    columnComments: Map<string, string>
+  ): void {
+    tables.forEach(table => {
+      const tableComment = tableComments.get(table.name.toLowerCase());
+      if (tableComment) {
+        table.metadata = {
+          ...(table.metadata || {}),
+          description: tableComment,
+        };
+      }
+
+      table.columns.forEach(column => {
+        const columnComment = columnComments.get(
+          `${table.name.toLowerCase()}.${column.name.toLowerCase()}`
+        );
+        if (columnComment) {
+          column.comment = columnComment;
+        }
+      });
+    });
+  }
+
+  private parseSqlStringLiteral(value: string): string {
+    return value.replace(/''/g, "'");
   }
 
   private resolveRelationships(
@@ -508,6 +563,7 @@ export class SQLParser implements Parser<string, Diagram> {
       name: table.name || 'Unknown',
       position: table.position || { x: 0, y: 0 },
       columns: table.columns || [],
+      metadata: table.metadata,
     };
   }
 

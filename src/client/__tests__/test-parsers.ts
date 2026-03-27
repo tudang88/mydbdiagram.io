@@ -224,6 +224,38 @@ async function testSQLParser(): Promise<void> {
     throw new Error('SQLParser should create relationships from named CONSTRAINT foreign keys');
   }
   console.log('✅ Table-level CONSTRAINT parsing working');
+
+  // Test COMMENT ON TABLE/COLUMN parsing
+  const sqlWithComments = `
+    CREATE TABLE m_companies (
+      id SERIAL PRIMARY KEY,
+      company_name VARCHAR(42) NOT NULL
+    );
+
+    COMMENT ON TABLE m_companies IS '会社マスター';
+    COMMENT ON COLUMN m_companies.company_name IS '会社名';
+  `;
+
+  const commentsResult = parser.parse(sqlWithComments);
+  if (!commentsResult.success || !commentsResult.data) {
+    throw new Error('SQLParser failed to parse SQL comments');
+  }
+
+  const commentsTable = commentsResult.data.getAllTables().find(t => t.getName() === 'm_companies');
+  if (!commentsTable) {
+    throw new Error('SQLParser failed to parse commented table');
+  }
+
+  const commentsTableMetadata = commentsTable.getMetadata();
+  if (!commentsTableMetadata?.description || commentsTableMetadata.description !== '会社マスター') {
+    throw new Error('SQLParser failed to parse COMMENT ON TABLE');
+  }
+
+  const commentsColumn = commentsTable.getAllColumns().find(c => c.name === 'company_name');
+  if (!commentsColumn || commentsColumn.comment !== '会社名') {
+    throw new Error('SQLParser failed to parse COMMENT ON COLUMN');
+  }
+  console.log('✅ COMMENT ON TABLE/COLUMN parsing working');
 }
 
 async function testDBMLParser(): Promise<void> {

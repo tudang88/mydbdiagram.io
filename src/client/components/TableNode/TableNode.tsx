@@ -99,16 +99,26 @@ const TableNodeComponent: React.FC<TableNodeProps> = ({
         <div className="table-columns">
           {columns.map(column => (
             <div key={column.id} className="table-column">
-              <span className="column-name">{column.name}</span>
-              <span className="column-type">{column.type}</span>
+              <div className="column-main">
+                <span className="column-name">{column.name}</span>
+                <span className="column-type">{column.type}</span>
+              </div>
+              {column.comment && <span className="column-comment">{column.comment}</span>}
               {column.constraints.length > 0 && (
                 <span className="column-constraints">
-                  {column.constraints.map(c => {
-                    if (c.type === 'PRIMARY_KEY') return '🔑';
-                    if (c.type === 'FOREIGN_KEY') return '🔗';
-                    if (c.type === 'NOT_NULL') return '!';
-                    if (c.type === 'UNIQUE') return 'U';
-                    return '';
+                  {column.constraints.map((c, index) => {
+                    const labelByType: Record<string, string> = {
+                      PRIMARY_KEY: 'PK',
+                      FOREIGN_KEY: 'FK',
+                      NOT_NULL: 'NN',
+                      UNIQUE: 'UQ',
+                    };
+                    const label = labelByType[c.type] || c.type;
+                    return (
+                      <span key={`${column.id}-constraint-${index}`} className="constraint-badge">
+                        {label}
+                      </span>
+                    );
                   })}
                 </span>
               )}
@@ -141,6 +151,24 @@ export const TableNode = memo(TableNodeComponent, (prevProps, nextProps) => {
 
   // If position changed, need to re-render
   if (positionChanged) {
+    return false;
+  }
+
+  // Re-render when column content (name/type/comment/constraints) changes
+  const prevColumns = prevProps.table.getAllColumns();
+  const nextColumns = nextProps.table.getAllColumns();
+  if (
+    prevColumns.some((col, index) => {
+      const nextCol = nextColumns[index];
+      if (!nextCol) return true;
+      return (
+        col.name !== nextCol.name ||
+        col.type !== nextCol.type ||
+        (col.comment || '') !== (nextCol.comment || '') ||
+        col.constraints.length !== nextCol.constraints.length
+      );
+    })
+  ) {
     return false;
   }
 
