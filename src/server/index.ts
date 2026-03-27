@@ -6,6 +6,7 @@ import routes from './routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const requestBodyLimit = process.env.REQUEST_BODY_LIMIT || '10mb';
 
 // Middleware
 app.use(
@@ -14,7 +15,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: requestBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use(logger);
 
 // Routes
