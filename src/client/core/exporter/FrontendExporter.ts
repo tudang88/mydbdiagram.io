@@ -139,9 +139,20 @@ export class FrontendExporter {
       const MARKER_SIZE = 12;
       const HORIZONTAL_OFFSET = Math.max(40, MARKER_ONE_OFFSET + MARKER_SIZE + 15);
 
-      // Text width approximation helpers for layout parity.
-      const estimateTextWidth = (text: string, fontSize: number): number =>
-        text.length * (fontSize * 0.56);
+      // Text width approximation (Latin vs CJK/fullwidth — avoids comment overlap in SVG).
+      const estimateTextWidth = (text: string, fontSize: number): number => {
+        let sum = 0;
+        for (const ch of text) {
+          const cp = ch.codePointAt(0) ?? 0;
+          const wide =
+            cp > 0x7f ||
+            (cp >= 0x2e80 && cp <= 0x9fff) ||
+            (cp >= 0xff00 && cp <= 0xffef) ||
+            (cp >= 0x3000 && cp <= 0x303f);
+          sum += wide ? fontSize * 0.92 : fontSize * 0.56;
+        }
+        return sum;
+      };
       const truncateText = (text: string, maxWidth: number, fontSize: number): string => {
         if (maxWidth <= 0) return '';
         if (estimateTextWidth(text, fontSize) <= maxWidth) return text;
@@ -166,7 +177,7 @@ export class FrontendExporter {
         const rightPadding = 8;
         const nameTypeGap = 8;
         const typeCommentGap = 8;
-        const commentGap = 8;
+        const commentToBadgeGap = 8;
         const badgeWidth = 22;
         const badgeGap = 4;
         const maxCommentWidth = 280;
@@ -191,7 +202,7 @@ export class FrontendExporter {
             nameTypeGap +
             typeWidth +
             (commentWidth > 0 ? typeCommentGap + commentWidth : 0) +
-            (badgesWidth > 0 ? commentGap + badgesWidth : 0) +
+            (badgesWidth > 0 ? commentToBadgeGap + badgesWidth : 0) +
             rightPadding;
           maxRowWidth = Math.max(maxRowWidth, rowWidth);
         });
@@ -416,14 +427,15 @@ export class FrontendExporter {
           `<text x="${x + tableWidth / 2}" y="${y + TABLE_HEADER_HEIGHT / 2 + 5}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
         );
 
-        // Columns (match TableNode row layout: name + type (left), comment + badges (right))
+        // Columns: same horizontal math as table width (per-row type start — no fixed 96px column).
         table.columns.forEach((column, index) => {
           const colY = y + TABLE_HEADER_HEIGHT + index * COLUMN_HEIGHT;
           const rowCenterY = colY + COLUMN_HEIGHT / 2;
           const textY = rowCenterY + 4;
           const leftPadding = 12;
-          const typeStartX = x + 96;
-          const typeToCommentGap = 8;
+          const nameTypeGap = 8;
+          const typeCommentGap = 8;
+          const commentToBadgeGap = 8;
 
           // Right side: constraints badges
           const badgeWidth = 22;
@@ -435,16 +447,16 @@ export class FrontendExporter {
           const badgesWidth =
             badgeCount > 0 ? badgeCount * badgeWidth + (badgeCount - 1) * badgeGap : 0;
           const badgesStartX = x + tableWidth - badgeRightPadding - badgesWidth;
-          const commentRightX = badgeCount > 0 ? badgesStartX - 8 : x + tableWidth - 8;
+          const commentAreaRight =
+            badgeCount > 0 ? badgesStartX - commentToBadgeGap : x + tableWidth - 8;
 
-          // Truncate left-side texts based on available area to avoid overlaps.
-          const nameMaxWidth = Math.max(0, typeStartX - (x + leftPadding) - 8);
-          const nameText = truncateText(column.name, nameMaxWidth, 12);
-          const typeMaxWidth = Math.max(0, commentRightX - typeStartX - typeToCommentGap);
-          const typeText = truncateText(column.type, typeMaxWidth, 11);
+          const nameStartX = x + leftPadding;
+          const typeStartX = nameStartX + estimateTextWidth(column.name, 12) + nameTypeGap;
+          const typeText = column.type;
+          const typeEndX = typeStartX + estimateTextWidth(typeText, 11);
 
           svg.push(
-            `<text x="${x + leftPadding}" y="${textY}" fill="#333" font-size="12" font-weight="500" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(nameText)}</text>`
+            `<text x="${nameStartX}" y="${textY}" fill="#333" font-size="12" font-weight="500" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(column.name)}</text>`
           );
           if (typeText) {
             svg.push(
@@ -465,15 +477,14 @@ export class FrontendExporter {
             );
           });
 
-          // Comment between type and badges (right aligned)
+          // Comment after type, before badges (start-anchored so it cannot drift over the name)
           if (column.comment) {
-            const typeEndX = typeStartX + (typeText ? estimateTextWidth(typeText, 11) : 0);
-            const commentLeftLimit = typeEndX + 8;
-            const commentMaxWidth = Math.max(0, commentRightX - commentLeftLimit);
+            const commentStartX = typeEndX + typeCommentGap;
+            const commentMaxWidth = Math.max(0, commentAreaRight - commentStartX);
             const commentText = truncateText(column.comment, commentMaxWidth, 11);
             if (commentText) {
               svg.push(
-                `<text x="${commentRightX}" y="${textY}" text-anchor="end" fill="#6b7280" font-size="11" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(commentText)}</text>`
+                `<text x="${commentStartX}" y="${textY}" text-anchor="start" fill="#6b7280" font-size="11" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(commentText)}</text>`
               );
             }
           }
