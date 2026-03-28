@@ -8,6 +8,8 @@ export interface UIState {
   panOffset: { x: number; y: number };
   showGrid: boolean;
   showSidebar: boolean;
+  /** When true, the SQL/DBML editor panel is collapsed to a narrow strip */
+  editorPanelCollapsed: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export class UIStore {
     panOffset: { x: 0, y: 0 },
     showGrid: true,
     showSidebar: true,
+    editorPanelCollapsed: false,
   };
 
   private observers: Array<Observer<UIState>> = [];
