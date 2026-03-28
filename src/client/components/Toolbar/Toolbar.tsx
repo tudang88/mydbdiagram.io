@@ -3,6 +3,7 @@ import { DiagramService } from '../../services/DiagramService';
 import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
 import { Diagram } from '../../core/diagram/Diagram';
+import { applyAutoLayout } from '../../core/diagram/autoLayoutDiagram';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
 import { ExportDialog } from '../ExportDialog/ExportDialog';
 import { LoadDialog } from '../LoadDialog/LoadDialog';
@@ -73,6 +74,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
+  const handleAutoLayout = () => {
+    const diagram = diagramStore.getDiagram();
+    if (!diagram || diagram.getAllTables().length === 0) {
+      return;
+    }
+    // Layout on a fresh clone so we never half-mutate the store’s diagram, then swap once.
+    const laidOut = Diagram.fromJSON(diagram.toJSON());
+    applyAutoLayout(laidOut);
+    diagramStore.setDiagram(laidOut);
+  };
+
   const handleImport = (diagram: Diagram, importText?: string) => {
     // Debug: Check relationships before setting diagram
     const relationshipsBefore = diagram.getAllRelationships();
@@ -111,6 +123,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           title="Load Diagram"
         >
           Load
+        </button>
+        <button
+          className="toolbar-button"
+          onClick={handleAutoLayout}
+          title="Arrange tables by relationship groups (FK graph)"
+        >
+          Auto layout
         </button>
       </div>
 
