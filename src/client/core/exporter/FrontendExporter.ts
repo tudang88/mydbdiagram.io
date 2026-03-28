@@ -132,8 +132,11 @@ export class FrontendExporter {
       const diagramData = diagram.toJSON();
       const padding = 50;
       const MIN_TABLE_WIDTH = 200;
-      const TABLE_HEADER_HEIGHT = 40;
+      const TABLE_HEADER_HEIGHT_NO_DESC = 40;
+      /** Header height when table has COMMENT ON TABLE (metadata.description); matches ~2 lines + title */
+      const TABLE_HEADER_HEIGHT_WITH_DESC = 72;
       const COLUMN_HEIGHT = 30;
+      const TABLE_DESC_MAX_PX = 30 * 7; // ~30ch like .table-description in TableNode.css
       const MARKER_ONE_OFFSET = 10;
       const MARKER_MANY_OFFSET = 1;
       const MARKER_SIZE = 12;
@@ -177,8 +180,42 @@ export class FrontendExporter {
       const estimateTypeCellWidth = (typeStr: string): number =>
         estimateTextWidth(typeStr, 11) * 1.06;
 
+      const getTableDescription = (table: (typeof diagramData.tables)[0]): string | undefined => {
+        const d = table.metadata?.description?.trim();
+        return d || undefined;
+      };
+
+      const wrapTableDescriptionTwoLines = (
+        text: string,
+        maxLineWidth: number,
+        fontSize: number
+      ): { line1: string; line2?: string } => {
+        if (estimateTextWidth(text, fontSize) <= maxLineWidth) {
+          return { line1: text };
+        }
+        let lo = 0;
+        let hi = text.length;
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2);
+          if (estimateTextWidth(text.slice(0, mid), fontSize) <= maxLineWidth) lo = mid;
+          else hi = mid - 1;
+        }
+        let breakPos = lo;
+        const spaceIdx = text.lastIndexOf(' ', breakPos);
+        if (spaceIdx > 0 && spaceIdx >= breakPos * 0.35) breakPos = spaceIdx;
+        const line1 = text.slice(0, breakPos).trimEnd();
+        const rest = text.slice(breakPos).trimStart();
+        if (!rest) return { line1 };
+        if (estimateTextWidth(rest, fontSize) <= maxLineWidth) {
+          return { line1, line2: rest };
+        }
+        const line2 = truncateText(rest, maxLineWidth, fontSize);
+        return { line1, line2 };
+      };
+
       // Calculate dynamic width per table so export matches ERD better.
       const tableWidthById = new Map<string, number>();
+      const tableHeaderHeightById = new Map<string, number>();
       diagramData.tables.forEach(table => {
         const leftPadding = 12;
         const rightPadding = 8;
@@ -189,7 +226,18 @@ export class FrontendExporter {
         const badgeGap = 4;
         const maxCommentWidth = 280;
 
-        const headerWidth = estimateTextWidth(table.name, 14) + 24;
+        const tableDesc = getTableDescription(table);
+        let headerWidth = estimateTextWidth(table.name, 14) + 24;
+        if (tableDesc) {
+          headerWidth = Math.max(
+            headerWidth,
+            Math.min(TABLE_DESC_MAX_PX, estimateTextWidth(tableDesc, 11)) + 24
+          );
+        }
+        tableHeaderHeightById.set(
+          table.id,
+          tableDesc ? TABLE_HEADER_HEIGHT_WITH_DESC : TABLE_HEADER_HEIGHT_NO_DESC
+        );
         let maxRowWidth = 0;
 
         table.columns.forEach(column => {
@@ -228,7 +276,8 @@ export class FrontendExporter {
         const x = table.position.x;
         const y = table.position.y;
         const tableWidth = tableWidthById.get(table.id) || MIN_TABLE_WIDTH;
-        const height = TABLE_HEADER_HEIGHT + table.columns.length * COLUMN_HEIGHT;
+        const headerH = tableHeaderHeightById.get(table.id) ?? TABLE_HEADER_HEIGHT_NO_DESC;
+        const height = headerH + table.columns.length * COLUMN_HEIGHT;
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
         maxX = Math.max(maxX, x + tableWidth);
@@ -320,11 +369,12 @@ export class FrontendExporter {
         };
         const fromTableWidth = tableWidthById.get(fromTable.id) || MIN_TABLE_WIDTH;
         const toTableWidth = tableWidthById.get(toTable.id) || MIN_TABLE_WIDTH;
+        const fromHeaderH = tableHeaderHeightById.get(fromTable.id) ?? TABLE_HEADER_HEIGHT_NO_DESC;
+        const toHeaderH = tableHeaderHeightById.get(toTable.id) ?? TABLE_HEADER_HEIGHT_NO_DESC;
 
         const fromColumnY =
-          fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
-        const toColumnY =
-          toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+          fromPos.y + fromHeaderH + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+        const toColumnY = toPos.y + toHeaderH + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
 
         const fromLeft = fromPos.x;
         const fromRight = fromPos.x + fromTableWidth;
@@ -419,7 +469,9 @@ export class FrontendExporter {
         const x = table.position.x - minX + padding;
         const y = table.position.y - minY + padding;
         const tableWidth = tableWidthById.get(table.id) || MIN_TABLE_WIDTH;
-        const tableHeight = TABLE_HEADER_HEIGHT + table.columns.length * COLUMN_HEIGHT;
+        const headerH = tableHeaderHeightById.get(table.id) ?? TABLE_HEADER_HEIGHT_NO_DESC;
+        const tableHeight = headerH + table.columns.length * COLUMN_HEIGHT;
+        const tableDesc = getTableDescription(table);
 
         // Table rectangle (white background, gray border)
         svg.push(
@@ -428,15 +480,31 @@ export class FrontendExporter {
 
         // Table header (light gray background, match canvas)
         svg.push(
-          `<rect x="${x}" y="${y}" width="${tableWidth}" height="${TABLE_HEADER_HEIGHT}" fill="#f8f9fa" stroke="#ddd" stroke-width="1" rx="4 4 0 0"/>`
+          `<rect x="${x}" y="${y}" width="${tableWidth}" height="${headerH}" fill="#f8f9fa" stroke="#ddd" stroke-width="1" rx="4 4 0 0"/>`
         );
-        svg.push(
-          `<text x="${x + tableWidth / 2}" y="${y + TABLE_HEADER_HEIGHT / 2 + 5}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
-        );
+        if (tableDesc) {
+          svg.push(
+            `<text x="${x + tableWidth / 2}" y="${y + 20}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
+          );
+          const maxDescW = Math.max(0, Math.min(TABLE_DESC_MAX_PX, tableWidth - 24));
+          const { line1, line2 } = wrapTableDescriptionTwoLines(tableDesc, maxDescW, 11);
+          svg.push(
+            `<text x="${x + tableWidth / 2}" y="${y + 42}" text-anchor="middle" fill="#6b7280" font-size="11" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(line1)}</text>`
+          );
+          if (line2) {
+            svg.push(
+              `<text x="${x + tableWidth / 2}" y="${y + 57}" text-anchor="middle" fill="#6b7280" font-size="11" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(line2)}</text>`
+            );
+          }
+        } else {
+          svg.push(
+            `<text x="${x + tableWidth / 2}" y="${y + TABLE_HEADER_HEIGHT_NO_DESC / 2 + 5}" text-anchor="middle" fill="#333" font-weight="600" font-size="14" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(table.name)}</text>`
+          );
+        }
 
         // Columns: same horizontal math as table width (per-row type start — no fixed 96px column).
         table.columns.forEach((column, index) => {
-          const colY = y + TABLE_HEADER_HEIGHT + index * COLUMN_HEIGHT;
+          const colY = y + headerH + index * COLUMN_HEIGHT;
           const rowCenterY = colY + COLUMN_HEIGHT / 2;
           const textY = rowCenterY + 4;
           const leftPadding = 12;
