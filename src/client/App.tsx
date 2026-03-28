@@ -18,6 +18,7 @@ import { ApiClient } from './services/ApiClient';
 import { DiagramValidator } from './core/validator/DiagramValidator';
 import { Diagram } from './core/diagram/Diagram';
 import { mergeDiagramLayout } from './core/diagram/mergeDiagramLayout';
+import { applyAutoLayout } from './core/diagram/autoLayoutDiagram';
 import { Table } from './core/table/Table';
 import { Relationship } from './core/relationship/Relationship';
 import { Column } from './types/table.types';
@@ -72,7 +73,11 @@ function App() {
     try {
       const newDiagram = Diagram.create(`diagram-${Date.now()}`);
       diagramStore.setDiagram(newDiagram);
-      uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
+      uiStore.setState({
+        selectedTableId: null,
+        selectedRelationshipId: null,
+        editorDrawAutoLayoutPending: true,
+      });
       setError(null);
       setImportText(undefined); // Clear import text so editor is cleared
       showNotification('success', 'New diagram created');
@@ -83,8 +88,12 @@ function App() {
     }
   }, [showNotification]);
 
-  const handleDiagramLoaded = useCallback(() => {
-    uiStore.setState({ selectedTableId: null, selectedRelationshipId: null });
+  const handleDiagramLoaded = useCallback((source: 'import' | 'load') => {
+    uiStore.setState({
+      selectedTableId: null,
+      selectedRelationshipId: null,
+      editorDrawAutoLayoutPending: source === 'import',
+    });
     setError(null);
   }, []);
 
@@ -247,7 +256,16 @@ function App() {
   const handleDiagramChangeFromSQL = useCallback(
     (newDiagram: Diagram) => {
       const previous = diagramStore.getDiagram();
-      diagramStore.setDiagram(mergeDiagramLayout(previous, newDiagram));
+      const merged = mergeDiagramLayout(previous, newDiagram);
+      let next = merged;
+      const pending = uiStore.getState().editorDrawAutoLayoutPending;
+      if (pending && merged.getAllTables().length > 0) {
+        const laidOut = Diagram.fromJSON(merged.toJSON());
+        applyAutoLayout(laidOut);
+        next = laidOut;
+        uiStore.setState({ editorDrawAutoLayoutPending: false });
+      }
+      diagramStore.setDiagram(next);
       setError(null);
     },
     [diagramStore]

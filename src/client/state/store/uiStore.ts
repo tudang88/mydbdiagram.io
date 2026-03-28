@@ -10,6 +10,11 @@ export interface UIState {
   showSidebar: boolean;
   /** When true, the SQL/DBML editor panel is collapsed to a narrow strip */
   editorPanelCollapsed: boolean;
+  /**
+   * When true, the next successful Draw from the schema editor runs auto layout after merge.
+   * Set false after that draw; reset on New / Import. Cleared when loading a saved diagram (positions preserved).
+   */
+  editorDrawAutoLayoutPending: boolean;
 }
 
 /**
@@ -34,6 +39,7 @@ export class UIStore {
     showGrid: true,
     showSidebar: true,
     editorPanelCollapsed: false,
+    editorDrawAutoLayoutPending: true,
   };
 
   private observers: Array<Observer<UIState>> = [];
