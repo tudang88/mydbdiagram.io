@@ -15,7 +15,8 @@ interface ToolbarProps {
   exportService: ExportService;
   diagramStore: DiagramStore;
   onNewDiagram: () => void;
-  onDiagramLoaded: () => void;
+  /** Call after diagram replaced from Import (pending first Draw layout) or Load (keep saved positions). */
+  onDiagramLoaded: (source: 'import' | 'load') => void;
   onImportText?: (text: string) => void; // Callback to set text in editor
   onGetEditorText?: () => string | undefined; // Callback to get current editor text
   onGetEditorFormat?: () => 'sql' | 'dbml' | undefined; // Callback to get current editor format
@@ -97,7 +98,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const relationshipsAfter = diagramAfter?.getAllRelationships() || [];
     console.log(`🔍 After setDiagram: ${relationshipsAfter.length} relationships`);
 
-    onDiagramLoaded();
+    onDiagramLoaded('import');
     // Set text in editor if provided
     if (importText && onImportText) {
       onImportText(importText);
@@ -171,7 +172,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         isOpen={showLoadDialog}
         onClose={() => setShowLoadDialog(false)}
         onLoad={diagramText => {
-          onDiagramLoaded();
+          onDiagramLoaded('load');
           // Set text in editor if provided
           if (diagramText && onImportText) {
             onImportText(diagramText);
