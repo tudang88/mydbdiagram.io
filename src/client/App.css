@@ -14,12 +14,100 @@
 }
 
 .app-editor-panel {
-  width: 33.333%;
+  position: relative;
+  flex: 0 0 33.333%;
   min-width: 300px;
+  max-width: 50%;
   border-right: 1px solid #3e3e42;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition:
+    flex-basis 0.2s ease,
+    min-width 0.2s ease,
+    max-width 0.2s ease;
+}
+
+.app-editor-panel--collapsed {
+  flex: 0 0 44px;
+  min-width: 44px;
+  max-width: 44px;
+}
+
+/* Narrow hit area on the left edge; button stays hidden until hover (or focus). */
+.app-editor-panel-toggle-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.app-editor-panel--collapsed .app-editor-panel-toggle-zone {
+  width: 100%;
+}
+
+.app-editor-panel-toggle-btn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #cccccc;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0;
+  transition:
+    opacity 0.18s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.app-editor-panel-toggle-zone:hover .app-editor-panel-toggle-btn,
+.app-editor-panel-toggle-btn:focus-visible {
+  opacity: 1;
+  background: #252526;
+  border-color: #3e3e42;
+}
+
+.app-editor-panel-toggle-zone:hover .app-editor-panel-toggle-btn:hover {
+  background: #3c3c3c;
+  color: #ffffff;
+}
+
+/* Touch / coarse pointer: no hover — keep control visible */
+@media (hover: none), (pointer: coarse) {
+  .app-editor-panel-toggle-btn {
+    opacity: 1;
+    background: #252526;
+    border-color: #3e3e42;
+  }
+}
+
+.app-editor-panel-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-editor-panel--collapsed .app-editor-panel-body {
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .app-canvas-panel {
