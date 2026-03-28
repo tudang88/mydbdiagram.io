@@ -170,6 +170,13 @@ export class FrontendExporter {
         return output ? `${output}${ellipsis}` : '';
       };
 
+      // Column name: font-weight 500 + system-ui runs wider than 0.56em-per-char; without this, type x overlaps the name.
+      const estimateColumnNameWidth = (name: string): number =>
+        estimateTextWidth(name, 12) * 1.16 + 4;
+      // Type: monospace; slightly wider than the generic Latin estimate.
+      const estimateTypeCellWidth = (typeStr: string): number =>
+        estimateTextWidth(typeStr, 11) * 1.06;
+
       // Calculate dynamic width per table so export matches ERD better.
       const tableWidthById = new Map<string, number>();
       diagramData.tables.forEach(table => {
@@ -186,8 +193,8 @@ export class FrontendExporter {
         let maxRowWidth = 0;
 
         table.columns.forEach(column => {
-          const nameWidth = estimateTextWidth(column.name, 12);
-          const typeWidth = estimateTextWidth(column.type, 11);
+          const nameWidth = estimateColumnNameWidth(column.name);
+          const typeWidth = estimateTypeCellWidth(column.type);
           const commentWidth = column.comment
             ? Math.min(maxCommentWidth, estimateTextWidth(column.comment, 11))
             : 0;
@@ -451,9 +458,9 @@ export class FrontendExporter {
             badgeCount > 0 ? badgesStartX - commentToBadgeGap : x + tableWidth - 8;
 
           const nameStartX = x + leftPadding;
-          const typeStartX = nameStartX + estimateTextWidth(column.name, 12) + nameTypeGap;
+          const typeStartX = nameStartX + estimateColumnNameWidth(column.name) + nameTypeGap;
           const typeText = column.type;
-          const typeEndX = typeStartX + estimateTextWidth(typeText, 11);
+          const typeEndX = typeStartX + estimateTypeCellWidth(typeText);
 
           svg.push(
             `<text x="${nameStartX}" y="${textY}" fill="#333" font-size="12" font-weight="500" font-family="system-ui, -apple-system, sans-serif">${this.escapeXML(column.name)}</text>`
