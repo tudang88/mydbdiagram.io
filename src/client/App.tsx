@@ -17,6 +17,7 @@ import { ExportService } from './services/ExportService';
 import { ApiClient } from './services/ApiClient';
 import { DiagramValidator } from './core/validator/DiagramValidator';
 import { Diagram } from './core/diagram/Diagram';
+import { mergeDiagramLayout } from './core/diagram/mergeDiagramLayout';
 import { Table } from './core/table/Table';
 import { Relationship } from './core/relationship/Relationship';
 import { Column } from './types/table.types';
@@ -233,7 +234,8 @@ function App() {
 
   const handleDiagramChangeFromSQL = useCallback(
     (newDiagram: Diagram) => {
-      diagramStore.setDiagram(newDiagram);
+      const previous = diagramStore.getDiagram();
+      diagramStore.setDiagram(mergeDiagramLayout(previous, newDiagram));
       setError(null);
     },
     [diagramStore]

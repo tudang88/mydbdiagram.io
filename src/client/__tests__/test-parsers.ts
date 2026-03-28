@@ -7,6 +7,7 @@ import { JSONParser } from '../core/parser/JSONParser';
 import { SQLParser } from '../core/parser/SQLParser';
 import { DBMLParser } from '../core/parser/DBMLParser';
 import { Diagram } from '../core/diagram/Diagram';
+import { mergeDiagramLayout } from '../core/diagram/mergeDiagramLayout';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -429,11 +430,63 @@ async function testDBMLParserEcontractFile(): Promise<void> {
   );
 }
 
+function testMergeDiagramLayout(): void {
+  console.log('\n🧪 Testing mergeDiagramLayout...');
+
+  const existing = Diagram.fromJSON({
+    id: 'diagram-persist',
+    tables: [
+      {
+        id: 't-old',
+        name: 'users',
+        position: { x: 999, y: 888 },
+        columns: [
+          { id: 'c1', name: 'id', type: 'INT', constraints: [{ type: 'PRIMARY_KEY' as const }] },
+        ],
+      },
+    ],
+    relationships: [],
+    metadata: {
+      createdAt: '2020-01-01T00:00:00.000Z',
+      updatedAt: '2020-01-01T00:00:00.000Z',
+      sourceText: 'CREATE TABLE users ...',
+      sourceFormat: 'sql',
+    },
+  });
+
+  const sql = 'CREATE TABLE users ( id INT PRIMARY KEY );';
+  const parser = new SQLParser();
+  const result = parser.parse(sql);
+  if (!result.success || !result.data) {
+    throw new Error('mergeDiagramLayout test: parse failed');
+  }
+  const merged = mergeDiagramLayout(existing, result.data);
+  if (merged.getId() !== 'diagram-persist') {
+    throw new Error('mergeDiagramLayout should preserve diagram id');
+  }
+  const usersTable = merged.getAllTables().find(t => t.getName() === 'users');
+  if (!usersTable) {
+    throw new Error('mergeDiagramLayout: users table missing');
+  }
+  const pos = usersTable.getPosition();
+  if (pos.x !== 999 || pos.y !== 888) {
+    throw new Error(
+      'mergeDiagramLayout should preserve table position by name, got ' + JSON.stringify(pos)
+    );
+  }
+  const meta = merged.getMetadata();
+  if (meta.sourceText !== 'CREATE TABLE users ...' || meta.sourceFormat !== 'sql') {
+    throw new Error('mergeDiagramLayout should preserve metadata fields');
+  }
+  console.log('✅ mergeDiagramLayout preserves id, positions, metadata');
+}
+
 async function runTests(): Promise<void> {
   try {
     await testJSONParser();
     await testSQLParser();
     await testDBMLParser();
+    testMergeDiagramLayout();
     await testDBMLParserEcontractFile();
 
     console.log('\n✅ All parser tests passed!');
