@@ -11,6 +11,7 @@ import { ExportService } from '../services/ExportService';
 import { ApiClient } from '../services/ApiClient';
 import { Diagram } from '../core/diagram/Diagram';
 import { Table } from '../core/table/Table';
+import { Relationship } from '../core/relationship/Relationship';
 import { FrontendExporter } from '../core/exporter/FrontendExporter';
 
 async function testExportDialogLogic(): Promise<void> {
@@ -340,6 +341,43 @@ async function testFrontendSvgMatchesCurrentErdStyle(): Promise<void> {
   console.log('✅ Frontend SVG style parity working');
 }
 
+async function testSvgExportReflectsMovedTablePositions(): Promise<void> {
+  console.log('\n🧪 Testing SVG export reflects moved table positions...');
+
+  const exporter = new FrontendExporter();
+  const diagram = Diagram.create('svg-move-test');
+  const ta = new Table('ta-move', 'users', { x: 0, y: 0 }, [
+    { id: 'ca', name: 'id', type: 'int', constraints: [{ type: 'PRIMARY_KEY' }] },
+  ]);
+  const tb = new Table('tb-move', 'posts', { x: 420, y: 0 }, [
+    { id: 'cb', name: 'id', type: 'int', constraints: [{ type: 'PRIMARY_KEY' }] },
+    { id: 'cbf', name: 'user_id', type: 'int', constraints: [{ type: 'FOREIGN_KEY' }] },
+  ]);
+  diagram.addTable(ta);
+  diagram.addTable(tb);
+  diagram.addRelationship(
+    new Relationship('r-move', tb.getId(), 'cbf', ta.getId(), 'ca', 'ONE_TO_MANY', false)
+  );
+
+  const before = exporter.exportSVG(diagram);
+  if (!before.success || !before.data) {
+    throw new Error('SVG export failed before move');
+  }
+
+  ta.moveTo({ x: 900, y: 120 });
+
+  const after = exporter.exportSVG(diagram);
+  if (!after.success || !after.data) {
+    throw new Error('SVG export failed after move');
+  }
+
+  if (before.data === after.data) {
+    throw new Error('SVG output should change after moving a table');
+  }
+
+  console.log('✅ SVG export reflects moved table positions');
+}
+
 async function runTests(): Promise<void> {
   try {
     await testExportDialogLogic();
@@ -350,6 +388,7 @@ async function runTests(): Promise<void> {
     await testExportIntegration();
     await testExportFormats();
     await testFrontendSvgMatchesCurrentErdStyle();
+    await testSvgExportReflectsMovedTablePositions();
 
     console.log('\n✅ All export functionality tests passed!');
   } catch (error) {

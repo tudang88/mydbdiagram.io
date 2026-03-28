@@ -3,6 +3,12 @@ import { Relationship } from '../../core/relationship/Relationship';
 import { Table } from '../../core/table/Table';
 import './RelationshipLine.css';
 
+/** Match TableNode / FrontendExporter SVG: optional table description adds header height */
+function getTableHeaderHeightForRouting(table: Table): number {
+  const desc = table.getMetadata()?.description?.trim();
+  return desc ? 72 : 40;
+}
+
 interface RelationshipLineProps {
   relationship: Relationship;
   fromTable: Table;
@@ -38,7 +44,6 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     // Fallback dimensions when DOM node isn't available yet
     const FALLBACK_TABLE_WIDTH = 200;
     const FALLBACK_TABLE_HEIGHT = 120;
-    const TABLE_HEADER_HEIGHT = 40;
     const COLUMN_HEIGHT = 30;
     // Ensure HORIZONTAL_OFFSET is large enough to prevent line from overlapping table
     // Minimum 40px to ensure line doesn't go through table even with markers
@@ -96,11 +101,13 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       };
     }
 
+    const fromHeaderH = getTableHeaderHeightForRouting(fromTable);
+    const toHeaderH = getTableHeaderHeightForRouting(toTable);
+
     // Calculate Y position of the column (center of the column row)
     const fromColumnY =
-      fromPos.y + TABLE_HEADER_HEIGHT + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
-    const toColumnY =
-      toPos.y + TABLE_HEADER_HEIGHT + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+      fromPos.y + fromHeaderH + fromColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
+    const toColumnY = toPos.y + toHeaderH + toColumnIndex * COLUMN_HEIGHT + COLUMN_HEIGHT / 2;
 
     // Calculate table boundaries
     const fromLeft = fromPos.x;
@@ -180,7 +187,17 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
         endDirection: 'right' as const, // Marker points to the right (away from table)
       };
     }
-  }, [fromX, fromY, toX, toY, fromTable, toTable, relationship]);
+  }, [
+    fromX,
+    fromY,
+    toX,
+    toY,
+    fromTable,
+    toTable,
+    relationship,
+    fromTable.getMetadata()?.description,
+    toTable.getMetadata()?.description,
+  ]);
 
   // Memoize relationship type styling
   const lineStyle = useMemo(() => {

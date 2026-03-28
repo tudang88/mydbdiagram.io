@@ -1,6 +1,33 @@
 import { Diagram } from '../diagram/Diagram';
 
 /**
+ * When every table has a rendered `.table-node`, use the same box as the canvas
+ * (offsetLeft/offsetTop + offsetWidth) so SVG routing matches RelationshipLine.tsx.
+ */
+function tryApplyDomBoxToSvgLayout(
+  diagramData: {
+    tables: Array<{ id: string; position: { x: number; y: number } }>;
+  },
+  tableWidthById: Map<string, number>,
+  minTableWidth: number
+): boolean {
+  if (typeof document === 'undefined') return false;
+  const byId = new Map<string, HTMLElement>();
+  for (const t of diagramData.tables) {
+    const el = document.querySelector(`.table-node[data-table-id="${t.id}"]`) as HTMLElement | null;
+    if (!el) return false;
+    byId.set(t.id, el);
+  }
+  for (const t of diagramData.tables) {
+    const el = byId.get(t.id)!;
+    t.position = { x: el.offsetLeft, y: el.offsetTop };
+    const w = el.offsetWidth;
+    tableWidthById.set(t.id, Math.max(minTableWidth, w > 0 ? w : minTableWidth));
+  }
+  return true;
+}
+
+/**
  * Frontend exporter interface
  */
 export interface FrontendExportResult {
@@ -130,6 +157,14 @@ export class FrontendExporter {
   exportSVG(diagram: Diagram): FrontendExportResult {
     try {
       const diagramData = diagram.toJSON();
+      // Always anchor layout to live Table positions (same as canvas), not a stale JSON view
+      for (const row of diagramData.tables) {
+        const live = diagram.getTable(row.id);
+        if (live) {
+          const p = live.getPosition();
+          row.position = { x: p.x, y: p.y };
+        }
+      }
       const padding = 50;
       const MIN_TABLE_WIDTH = 200;
       const TABLE_HEADER_HEIGHT_NO_DESC = 40;
@@ -141,6 +176,9 @@ export class FrontendExporter {
       const MARKER_MANY_OFFSET = 1;
       const MARKER_SIZE = 12;
       const HORIZONTAL_OFFSET = Math.max(40, MARKER_ONE_OFFSET + MARKER_SIZE + 15);
+      /** Match RelationshipLine.tsx — anchors sit just outside the table border */
+      const TABLE_EDGE_GAP_LEFT = 4;
+      const TABLE_EDGE_GAP_RIGHT = 6;
 
       // Text width approximation (Latin vs CJK/fullwidth — avoids comment overlap in SVG).
       const estimateTextWidth = (text: string, fontSize: number): number => {
@@ -266,6 +304,9 @@ export class FrontendExporter {
         tableWidthById.set(table.id, tableWidth);
       });
 
+      // Prefer painted layout in the browser so lines/widths match RelationshipLine (DOM measurement).
+      tryApplyDomBoxToSvgLayout(diagramData, tableWidthById, MIN_TABLE_WIDTH);
+
       // Calculate bounds
       let minX = Infinity;
       let minY = Infinity;
@@ -385,14 +426,20 @@ export class FrontendExporter {
         const toCenterX = toPos.x + toTableWidth / 2;
 
         const relationshipType = relationship.type;
-        const isFirstTable = (tableId: string) => tableId === 'table-1';
-        const isFromTableFirst = isFirstTable(fromTable.id);
-        const isToTableFirst = isFirstTable(toTable.id);
 
-        const getMarkerOffset = (isMany: boolean, isFirst: boolean) => {
-          if (isMany) return MARKER_MANY_OFFSET;
-          return isFirst ? MARKER_ONE_OFFSET + 10 : MARKER_ONE_OFFSET;
-        };
+        const markerOffsets = (() => {
+          if (relationshipType === 'ONE_TO_ONE') {
+            return { start: MARKER_ONE_OFFSET, end: MARKER_ONE_OFFSET };
+          }
+          if (relationshipType === 'ONE_TO_MANY') {
+            return { start: MARKER_MANY_OFFSET, end: MARKER_ONE_OFFSET };
+          }
+          if (relationshipType === 'MANY_TO_MANY') {
+            return { start: MARKER_MANY_OFFSET, end: MARKER_MANY_OFFSET };
+          }
+          return { start: MARKER_MANY_OFFSET, end: MARKER_ONE_OFFSET };
+        })();
+        const getMarkerOffset = (side: 'start' | 'end') => markerOffsets[side];
 
         let fromX: number;
         let toX: number;
@@ -403,43 +450,26 @@ export class FrontendExporter {
         let markerEndY: number;
         let startDirection: 'left' | 'right';
         let endDirection: 'left' | 'right';
-        let fromIsMany: boolean;
-        let toIsMany: boolean;
-
-        if (relationshipType === 'MANY_TO_MANY') {
-          fromIsMany = true;
-          toIsMany = true;
-        } else if (relationshipType === 'ONE_TO_ONE') {
-          fromIsMany = false;
-          toIsMany = false;
-        } else {
-          const fromColumnIsPk = fromColumn.constraints.some(c => c.type === 'PRIMARY_KEY');
-          const toColumnIsPk = toColumn.constraints.some(c => c.type === 'PRIMARY_KEY');
-          const fromColumnIsFk = fromColumn.constraints.some(c => c.type === 'FOREIGN_KEY');
-          const toColumnIsFk = toColumn.constraints.some(c => c.type === 'FOREIGN_KEY');
-          fromIsMany = fromColumnIsFk || (fromColumnIsPk ? false : true);
-          toIsMany = toColumnIsFk || (toColumnIsPk ? false : true);
-        }
 
         if (fromCenterX < toCenterX) {
-          fromX = fromRight;
-          toX = toLeft;
+          fromX = fromRight + TABLE_EDGE_GAP_RIGHT;
+          toX = toLeft - TABLE_EDGE_GAP_LEFT;
           const midX = fromX + HORIZONTAL_OFFSET;
           path = `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`;
-          markerStartX = fromX + getMarkerOffset(fromIsMany, isFromTableFirst);
+          markerStartX = fromX + getMarkerOffset('start');
           markerStartY = fromColumnY;
-          markerEndX = toX - getMarkerOffset(toIsMany, isToTableFirst);
+          markerEndX = toX - getMarkerOffset('end');
           markerEndY = toColumnY;
           startDirection = 'right';
           endDirection = 'left';
         } else {
-          fromX = fromLeft;
-          toX = toRight;
+          fromX = fromLeft - TABLE_EDGE_GAP_LEFT;
+          toX = toRight + TABLE_EDGE_GAP_RIGHT;
           const midX = fromX - HORIZONTAL_OFFSET;
           path = `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`;
-          markerStartX = fromX - getMarkerOffset(fromIsMany, isFromTableFirst);
+          markerStartX = fromX - getMarkerOffset('start');
           markerStartY = fromColumnY;
-          markerEndX = toX + getMarkerOffset(toIsMany, isToTableFirst);
+          markerEndX = toX + getMarkerOffset('end');
           markerEndY = toColumnY;
           startDirection = 'left';
           endDirection = 'right';

@@ -284,10 +284,16 @@ export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      // Persist table positions into the store as a new Diagram instance (JSON round-trip)
+      // so export/SVG and any listeners always see the latest x/y, not a stale snapshot.
+      const d = diagramStore.getDiagram();
+      if (d) {
+        diagramStore.setDiagram(Diagram.fromJSON(d.toJSON()));
+      }
       // Force final re-render to ensure relationship lines are updated
       setForceUpdate(prev => prev + 1);
     }
-  }, [draggedTableId]);
+  }, [draggedTableId, diagramStore]);
 
   // Document-level mouse move handler for continuous dragging
   useEffect(() => {

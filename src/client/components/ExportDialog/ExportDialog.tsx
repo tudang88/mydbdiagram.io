@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
+import { Diagram } from '../../core/diagram/Diagram';
 import { FrontendExporter } from '../../core/exporter/FrontendExporter';
 import './ExportDialog.css';
 
@@ -20,7 +21,7 @@ const SUPPORTED_FORMATS = [
 export const ExportDialog: React.FC<ExportDialogProps> = ({
   isOpen,
   onClose,
-  exportService,
+  exportService: _exportService,
   diagramStore,
 }) => {
   const [selectedFormat, setSelectedFormat] = useState<string>('json');
@@ -33,11 +34,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   if (!isOpen) return null;
 
   const handleExport = async () => {
-    const diagram = diagramStore.getDiagram();
-    if (!diagram) {
+    const current = diagramStore.getDiagram();
+    if (!current) {
       setError('No diagram to export');
       return;
     }
+    // Deep snapshot from serialized state so positions (after drag) always match what we export
+    const diagram = Diagram.fromJSON(current.toJSON());
 
     setIsExporting(true);
     setExportProgress(0);
@@ -67,34 +70,36 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           exportError = result.error;
         }
       } else if (selectedFormat === 'svg') {
-        const result = frontendExporter.exportSVG(diagram);
-        if (result.success) {
-          exportData = result.data;
+        // Wait for layout paint so .table-node boxes match the store (same source as RelationshipLine).
+        await new Promise<void>(resolve => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => resolve());
+          });
+        });
+        const latest = diagramStore.getDiagram();
+        if (!latest) {
+          exportError = 'No diagram to export';
         } else {
-          exportError = result.error;
+          const diagramForSvg = Diagram.fromJSON(latest.toJSON());
+          const result = frontendExporter.exportSVG(diagramForSvg);
+          if (result.success) {
+            exportData = result.data;
+          } else {
+            exportError = result.error;
+          }
         }
       }
 
       setExportProgress(75);
 
-      if (exportError || !exportData) {
-        // Fallback to backend export if diagram is saved
-        const diagramId = diagram.getId();
-        if (diagramId) {
-          const result = await exportService.exportDiagram(diagramId, selectedFormat);
-          if (!result.success) {
-            setError(result.error || exportError || 'Export failed');
-            setIsExporting(false);
-            setExportProgress(0);
-            return;
-          }
-          exportData = result.data as string;
-        } else {
-          setError(exportError || 'Export failed');
-          setIsExporting(false);
-          setExportProgress(0);
-          return;
-        }
+      if (exportError || exportData === undefined) {
+        // JSON / SQL / SVG are generated in-browser from the current diagram (including unsaved
+        // table positions after drag). Do not fall back to the server: that uses the last saved
+        // file and a simpler SVG renderer, so exports would not match the canvas.
+        setError(exportError || 'Export failed');
+        setIsExporting(false);
+        setExportProgress(0);
+        return;
       }
 
       setExportProgress(90);
