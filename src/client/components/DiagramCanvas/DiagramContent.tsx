@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo } from 'react';
 import { Diagram } from '../../core/diagram/Diagram';
 import { TableNode } from '../TableNode/TableNode';
 import { RelationshipLine } from '../RelationshipLine/RelationshipLine';
@@ -43,9 +43,6 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   //   [viewport, draggedTableId]
   // );
 
-  // Get tables and relationships - don't memoize to ensure re-render when positions change
-  // This ensures tables and relationships re-render when table positions update
-  const tables = diagram.getAllTables();
   const relationships = diagram.getAllRelationships();
 
   // Filter tables visible in viewport (with padding for smooth scrolling)
@@ -53,7 +50,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   // TODO: Re-enable viewport filtering with proper bounds checking
   const visibleTables = useMemo(() => {
     // Show all tables for now to prevent disappearing issue
-    return tables;
+    return diagram.getAllTables();
 
     // Original viewport filtering code (disabled for debugging)
     // return tables.filter(table => {
@@ -72,7 +69,7 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
     //   // Use expanded viewport to include tables near the visible area
     //   return isInViewport(bounds, expandedViewport);
     // });
-  }, [tables]);
+  }, [diagram]);
 
   // Filter relationships - show all relationships if both tables exist
   // Temporarily disable viewport filtering for relationships to debug
@@ -175,16 +172,10 @@ const DiagramContentComponent: React.FC<DiagramContentProps> = ({
   );
 };
 
-// Memoize DiagramContent to prevent unnecessary re-renders
-export const DiagramContent = memo(DiagramContentComponent, (prevProps, nextProps) => {
-  // Only re-render if diagram, viewport, or selection changes
-  return (
-    prevProps.diagram === nextProps.diagram &&
-    prevProps.uiState.selectedTableId === nextProps.uiState.selectedTableId &&
-    prevProps.viewport.x === nextProps.viewport.x &&
-    prevProps.viewport.y === nextProps.viewport.y &&
-    prevProps.viewport.zoom === nextProps.viewport.zoom &&
-    prevProps.viewport.width === nextProps.viewport.width &&
-    prevProps.viewport.height === nextProps.viewport.height
-  );
-});
+/**
+ * Do not wrap in React.memo with reference equality on `diagram`: table positions are mutated
+ * on the same Diagram instance in some flows, and Auto layout replaces via fromJSON — both cases
+ * must re-render when positions change. Drag relies on forceUpdate key on the parent; layout
+ * must not depend on that.
+ */
+export const DiagramContent = DiagramContentComponent;

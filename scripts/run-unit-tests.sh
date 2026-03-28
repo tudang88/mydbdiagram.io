@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 TESTS=(
+  src/client/core/__tests__/test-auto-layout.ts
   src/client/core/__tests__/test-domain-models.ts
   src/client/core/__tests__/test-validators.ts
   src/server/__tests__/test-repositories.ts
