@@ -320,7 +320,7 @@ function App() {
           </div>
         </div>
         <footer className="app-footer">
-          <span className="app-footer-text">© {new Date().getFullYear()} MyDBDiagram.io</span>
+          <span className="app-footer-text">© {new Date().getFullYear()} MyDBDiagram.io by tudang88</span>
         </footer>
         {error && <ErrorMessage message={error} onDismiss={handleDismissError} />}
         {notification && (
