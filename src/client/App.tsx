@@ -50,6 +50,11 @@ function App() {
   const [showSQLEditor] = useState(true); // Can be toggled in future
   const [importText, setImportText] = useState<string | undefined>(undefined);
   const [editorText, setEditorText] = useState<string>(''); // Track current editor text for saving
+  const [uiState, setUiState] = useState(() => uiStore.getState());
+
+  useEffect(() => {
+    return uiStore.subscribe(setUiState);
+  }, []);
 
   // Initialize with empty diagram if none exists
   useEffect(() => {
@@ -263,15 +268,43 @@ function App() {
         />
         <div className="app-main">
           {showSQLEditor && (
-            <div className="app-editor-panel">
-              <SQLEditor
-                diagram={diagramStore.getDiagram()}
-                onDiagramChange={handleDiagramChangeFromSQL}
-                sqlDialect={sqlDialect}
-                onDialectChange={setSqlDialect}
-                initialText={importText}
-                onTextChange={setEditorText}
-              />
+            <div
+              className={
+                uiState.editorPanelCollapsed
+                  ? 'app-editor-panel app-editor-panel--collapsed'
+                  : 'app-editor-panel'
+              }
+            >
+              <div className="app-editor-panel-body" aria-hidden={uiState.editorPanelCollapsed}>
+                <SQLEditor
+                  diagram={diagramStore.getDiagram()}
+                  onDiagramChange={handleDiagramChangeFromSQL}
+                  sqlDialect={sqlDialect}
+                  onDialectChange={setSqlDialect}
+                  initialText={importText}
+                  onTextChange={setEditorText}
+                />
+              </div>
+              <div className="app-editor-panel-toggle-zone">
+                <button
+                  type="button"
+                  className="app-editor-panel-toggle-btn"
+                  onClick={() =>
+                    uiStore.setState({
+                      editorPanelCollapsed: !uiStore.getState().editorPanelCollapsed,
+                    })
+                  }
+                  aria-expanded={!uiState.editorPanelCollapsed}
+                  aria-label={
+                    uiState.editorPanelCollapsed ? 'Expand schema editor' : 'Collapse schema editor'
+                  }
+                  title={
+                    uiState.editorPanelCollapsed ? 'Expand schema editor' : 'Collapse schema editor'
+                  }
+                >
+                  {uiState.editorPanelCollapsed ? '▶' : '◀'}
+                </button>
+              </div>
             </div>
           )}
           <div className="app-canvas-panel">
