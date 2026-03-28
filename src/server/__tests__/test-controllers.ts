@@ -63,6 +63,7 @@ async function testDiagramController(): Promise<void> {
   // Test create
   const createReq = new MockRequest();
   createReq.body = {
+    id: 'diagram-create-test',
     tables: [
       {
         id: 'table-1',
@@ -115,8 +116,9 @@ async function testDiagramController(): Promise<void> {
   if (findAllRes.statusCode !== 200) {
     throw new Error('FindAll should return 200');
   }
-  if (!Array.isArray(findAllRes.data)) {
-    throw new Error('FindAll should return array');
+  const listPayload = findAllRes.data as { diagrams?: unknown[] };
+  if (!listPayload?.diagrams || !Array.isArray(listPayload.diagrams)) {
+    throw new Error('FindAll should return { diagrams: array }');
   }
   console.log('✅ FindAll working');
 
@@ -124,6 +126,7 @@ async function testDiagramController(): Promise<void> {
   const updateReq = new MockRequest();
   updateReq.params = { id: createdDiagram.id };
   updateReq.body = {
+    id: createdDiagram.id,
     tables: [
       {
         id: 'table-1',

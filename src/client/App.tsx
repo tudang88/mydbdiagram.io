@@ -223,7 +223,14 @@ function App() {
     if (!currentDiagram) return;
 
     try {
-      const table = new Table(`table-${Date.now()}`, 'NewTable', { x: 200, y: 200 });
+      const tid = `table-${Date.now()}`;
+      const table = new Table(tid, 'NewTable', { x: 200, y: 200 });
+      table.addColumn({
+        id: `col-${Date.now()}`,
+        name: 'id',
+        type: 'INTEGER',
+        constraints: [{ type: 'PRIMARY_KEY' }],
+      });
       currentDiagram.addTable(table);
       uiStore.setState({ selectedTableId: table.getId() });
       setError(null);

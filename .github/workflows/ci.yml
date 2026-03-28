@@ -36,6 +36,9 @@ jobs:
       - name: Check code formatting
         run: npm run format:check
 
+      - name: Run unit tests
+        run: npm run test
+
       - name: Build project
         run: npm run build
 
@@ -46,48 +49,3 @@ jobs:
             exit 1
           fi
           echo "✅ Build artifacts created successfully"
-
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run type check
-        run: npm run type-check
-
-      - name: Run domain model tests
-        run: npx tsx src/client/core/__tests__/test-domain-models.ts || echo "⚠️ Domain model tests skipped (may require setup)"
-
-      - name: Run backend unit tests
-        run: |
-          npx tsx src/server/__tests__/test-repositories.ts || echo "⚠️ Repository tests skipped"
-          npx tsx src/server/__tests__/test-services.ts || echo "⚠️ Service tests skipped"
-          npx tsx src/server/__tests__/test-exporters.ts || echo "⚠️ Exporter tests skipped"
-          npx tsx src/server/__tests__/test-controllers.ts || echo "⚠️ Controller tests skipped"
-
-      - name: Run frontend unit tests
-        run: |
-          npx tsx src/client/__tests__/test-api-client.ts || echo "⚠️ API client tests skipped"
-          npx tsx src/client/__tests__/test-state-management.ts || echo "⚠️ State management tests skipped"
-          npx tsx src/client/__tests__/test-parsers.ts || echo "⚠️ Parser tests skipped"
-
-      - name: Run integration tests
-        run: |
-          npx tsx src/server/__tests__/test-integration-e2e.ts || echo "⚠️ Integration tests skipped (requires server)"
-
-      - name: Test summary
-        run: |
-          echo "✅ Test job completed"
-          echo "Note: Some tests may be skipped if they require server or external dependencies"
-

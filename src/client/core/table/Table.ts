@@ -91,6 +91,13 @@ export class Table {
       });
     }
 
+    if (this.columns.size === 0) {
+      errors.push({
+        field: 'columns',
+        message: 'Table must have at least one column',
+      });
+    }
+
     // Validate columns
     this.columns.forEach(column => {
       if (!column.name || column.name.trim() === '') {

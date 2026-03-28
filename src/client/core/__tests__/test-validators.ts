@@ -85,26 +85,31 @@ async function testDiagramValidator(): Promise<void> {
   }
   console.log('✅ Invalid diagram (invalid table) validation failed correctly');
 
-  // Test invalid diagram - invalid relationship
-  const invalidDiagram5 = Diagram.create('test-5');
-  const table5 = new Table('table-5', 'Users', { x: 100, y: 100 });
-  table5.addColumn({
-    id: 'col-1',
-    name: 'id',
-    type: 'INTEGER',
-    constraints: [],
+  // Test invalid diagram - invalid relationship (fromJSON bypasses addRelationship guards)
+  const now = new Date().toISOString();
+  const invalidDiagram5 = Diagram.fromJSON({
+    id: 'test-5',
+    tables: [
+      {
+        id: 'table-5',
+        name: 'Users',
+        position: { x: 100, y: 100 },
+        columns: [{ id: 'col-1', name: 'id', type: 'INTEGER', constraints: [] }],
+      },
+    ],
+    relationships: [
+      {
+        id: 'rel-1',
+        fromTableId: 'non-existent',
+        fromColumnId: 'col-1',
+        toTableId: 'table-5',
+        toColumnId: 'col-1',
+        type: 'ONE_TO_MANY',
+        optional: false,
+      },
+    ],
+    metadata: { createdAt: now, updatedAt: now },
   });
-  invalidDiagram5.addTable(table5);
-  const invalidRel = new Relationship(
-    'rel-1',
-    'non-existent',
-    'col-1',
-    'table-5',
-    'col-1',
-    'ONE_TO_MANY',
-    false
-  );
-  invalidDiagram5.addRelationship(invalidRel);
   const invalidResult5 = validator.validate(invalidDiagram5);
   if (invalidResult5.isValid) {
     throw new Error('Diagram with invalid relationship should fail validation');

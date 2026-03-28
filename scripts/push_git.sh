@@ -61,16 +61,14 @@ else
 fi
 echo ""
 
-# Step 5: Running tests (optional, can be skipped if tests are slow)
+# Step 5: Running unit tests (same suite as CI)
 echo -e "${YELLOW}🧪 Step 5: Running tests...${NC}"
-echo -e "${YELLOW}   (Skipping tests - uncomment below to enable)${NC}"
-# Uncomment the following lines to run tests before push
-# if npm test; then
-#   echo -e "${GREEN}✅ Tests passed${NC}"
-# else
-#   echo -e "${RED}❌ Tests failed${NC}"
-#   exit 1
-# fi
+if npm run test; then
+  echo -e "${GREEN}✅ Tests passed${NC}"
+else
+  echo -e "${RED}❌ Tests failed${NC}"
+  exit 1
+fi
 echo ""
 
 # All checks passed, proceed with git operations
