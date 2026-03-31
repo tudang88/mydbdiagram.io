@@ -63,6 +63,24 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
               </div>
             ))}
           </div>
+          <div className="app-info">
+            <div className="app-info-title">About this build</div>
+            <div className="app-info-line">
+              <strong>Version:</strong> v0.1.0
+            </div>
+            <div className="app-info-line">
+              <strong>Branch:</strong> main-frontendonly
+            </div>
+            <div className="app-info-line">
+              <strong>Repository:</strong>{' '}
+              <a href="https://github.com/tudang88/mydbdiagram.io" target="_blank" rel="noreferrer">
+                github.com/tudang88/mydbdiagram.io
+              </a>
+            </div>
+            <div className="app-info-hint">
+              Please open issues or submit contributions in the repository above.
+            </div>
+          </div>
         </div>
         <div className="dialog-footer">
           <button className="close-button-footer" onClick={onClose}>
