@@ -1,4 +1,5 @@
 import { Diagram } from '../diagram/Diagram';
+import { countPathIntersections } from '../diagram/routingIntersections';
 
 /**
  * When every table has a rendered `.table-node`, use the same box as the canvas
@@ -441,39 +442,118 @@ export class FrontendExporter {
         })();
         const getMarkerOffset = (side: 'start' | 'end') => markerOffsets[side];
 
-        let fromX: number;
-        let toX: number;
-        let path: string;
-        let markerStartX: number;
-        let markerStartY: number;
-        let markerEndX: number;
-        let markerEndY: number;
-        let startDirection: 'left' | 'right';
-        let endDirection: 'left' | 'right';
-
-        if (fromCenterX < toCenterX) {
-          fromX = fromRight + TABLE_EDGE_GAP_RIGHT;
-          toX = toLeft - TABLE_EDGE_GAP_LEFT;
-          const midX = fromX + HORIZONTAL_OFFSET;
-          path = `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`;
-          markerStartX = fromX + getMarkerOffset('start');
-          markerStartY = fromColumnY;
-          markerEndX = toX - getMarkerOffset('end');
-          markerEndY = toColumnY;
-          startDirection = 'right';
-          endDirection = 'left';
-        } else {
-          fromX = fromLeft - TABLE_EDGE_GAP_LEFT;
-          toX = toRight + TABLE_EDGE_GAP_RIGHT;
-          const midX = fromX - HORIZONTAL_OFFSET;
-          path = `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`;
-          markerStartX = fromX - getMarkerOffset('start');
-          markerStartY = fromColumnY;
-          markerEndX = toX + getMarkerOffset('end');
-          markerEndY = toColumnY;
-          startDirection = 'left';
-          endDirection = 'right';
-        }
+        type Direction = 'left' | 'right';
+        type Candidate = {
+          path: string;
+          markerStartX: number;
+          markerStartY: number;
+          markerEndX: number;
+          markerEndY: number;
+          startDirection: Direction;
+          endDirection: Direction;
+          score: number;
+          pathStartX: number;
+          pathEndX: number;
+        };
+        const getSegmentsForCandidate = (
+          startX: number,
+          startY: number,
+          midX: number,
+          endX: number,
+          endY: number
+        ): Array<{ x1: number; y1: number; x2: number; y2: number }> => [
+          { x1: startX, y1: startY, x2: midX, y2: startY },
+          { x1: midX, y1: startY, x2: midX, y2: endY },
+          { x1: midX, y1: endY, x2: endX, y2: endY },
+        ];
+        const obstacleRects = diagramData.tables
+          .filter(t => t.id !== fromTable.id && t.id !== toTable.id)
+          .map(t => {
+            const w = tableWidthById.get(t.id) || MIN_TABLE_WIDTH;
+            const h =
+              (tableHeaderHeightById.get(t.id) ?? TABLE_HEADER_HEIGHT_NO_DESC) +
+              t.columns.length * COLUMN_HEIGHT;
+            const tx = t.position.x - minX + padding;
+            const ty = t.position.y - minY + padding;
+            return { left: tx, right: tx + w, top: ty, bottom: ty + h };
+          });
+        const scoreCandidate = (
+          segments: Array<{ x1: number; y1: number; x2: number; y2: number }>
+        ): number => countPathIntersections(segments, obstacleRects);
+        const getAnchorX = (tableSide: 'from' | 'to', side: Direction): number => {
+          if (tableSide === 'from') {
+            return side === 'right'
+              ? fromRight + TABLE_EDGE_GAP_RIGHT
+              : fromLeft - TABLE_EDGE_GAP_LEFT;
+          }
+          return side === 'right' ? toRight + TABLE_EDGE_GAP_RIGHT : toLeft - TABLE_EDGE_GAP_LEFT;
+        };
+        const getMidX = (fromSide: Direction, toSide: Direction, startX: number): number => {
+          if (fromSide === toSide) {
+            return fromSide === 'left'
+              ? Math.min(fromLeft, toLeft) - HORIZONTAL_OFFSET
+              : Math.max(fromRight, toRight) + HORIZONTAL_OFFSET;
+          }
+          return fromSide === 'right' ? startX + HORIZONTAL_OFFSET : startX - HORIZONTAL_OFFSET;
+        };
+        const buildCandidate = (
+          fromSide: Direction,
+          toSide: Direction,
+          routingPenalty: number
+        ): Candidate => {
+          const startX = getAnchorX('from', fromSide);
+          const endX = getAnchorX('to', toSide);
+          const midX = getMidX(fromSide, toSide, startX);
+          const segments = getSegmentsForCandidate(startX, fromColumnY, midX, endX, toColumnY);
+          let directionPenalty = 0;
+          if (fromSide === 'right' && !(midX > startX)) directionPenalty += 1000;
+          if (fromSide === 'left' && !(midX < startX)) directionPenalty += 1000;
+          if (toSide === 'right' && !(midX > endX)) directionPenalty += 1000;
+          if (toSide === 'left' && !(midX < endX)) directionPenalty += 1000;
+          return {
+            path: `M ${startX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${endX} ${toColumnY}`,
+            markerStartX:
+              fromSide === 'right'
+                ? startX + getMarkerOffset('start')
+                : startX - getMarkerOffset('start'),
+            markerStartY: fromColumnY,
+            markerEndX:
+              toSide === 'right' ? endX + getMarkerOffset('end') : endX - getMarkerOffset('end'),
+            markerEndY: toColumnY,
+            startDirection: fromSide,
+            endDirection: toSide,
+            score: scoreCandidate(segments) + routingPenalty + directionPenalty,
+            pathStartX: startX,
+            pathEndX: endX,
+          };
+        };
+        const defaultFromSide: Direction = fromCenterX < toCenterX ? 'right' : 'left';
+        const defaultToSide: Direction = defaultFromSide === 'right' ? 'left' : 'right';
+        const combos: Array<{ from: Direction; to: Direction; penalty: number }> = [
+          { from: defaultFromSide, to: defaultToSide, penalty: 0 },
+          {
+            from: defaultFromSide === 'right' ? 'left' : 'right',
+            to: defaultFromSide,
+            penalty: 0.1,
+          },
+          { from: 'left', to: 'left', penalty: 0.35 },
+          { from: 'right', to: 'right', penalty: 0.35 },
+        ];
+        const candidates = combos.map(c => buildCandidate(c.from, c.to, c.penalty));
+        candidates.sort((a, b) => {
+          if (a.score !== b.score) return a.score - b.score;
+          return Math.abs(a.pathStartX - a.pathEndX) - Math.abs(b.pathStartX - b.pathEndX);
+        });
+        const best = candidates[0];
+        const {
+          path,
+          markerStartX,
+          markerStartY,
+          markerEndX,
+          markerEndY,
+          startDirection,
+          endDirection,
+        } = best;
 
         // Draw relationship path
         svg.push(`<path d="${path}" stroke="#666" stroke-width="1" fill="none"/>`);
