@@ -1,6 +1,7 @@
-import React, { memo, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Relationship } from '../../core/relationship/Relationship';
 import { Table } from '../../core/table/Table';
+import { countPathIntersections } from '../../core/diagram/routingIntersections';
 import './RelationshipLine.css';
 
 /** Match TableNode / FrontendExporter SVG: optional table description adds header height */
@@ -119,9 +120,6 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
     const fromCenterX = fromPos.x + fromSize.width / 2;
     const toCenterX = toPos.x + toSize.width / 2;
 
-    let fromX: number;
-    let toX: number;
-
     // Determine marker offsets based on relationship type
     const relationshipType = relationship.getType();
     const markerOffsets = (() => {
@@ -140,53 +138,140 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
 
     const getMarkerOffset = (side: 'start' | 'end') => markerOffsets[side];
 
-    // If fromTable is to the left of toTable
-    if (fromCenterX < toCenterX) {
-      fromX = fromRight + TABLE_EDGE_GAP_RIGHT;
-      toX = toLeft - TABLE_EDGE_GAP_LEFT;
-      // Create orthogonal path: starts at table edge, goes horizontal, vertical, horizontal, ends at table edge
-      const midX = fromX + HORIZONTAL_OFFSET;
+    type Direction = 'left' | 'right';
+    type Candidate = {
+      path: string;
+      pathStartX: number;
+      pathStartY: number;
+      pathEndX: number;
+      pathEndY: number;
+      markerStartX: number;
+      markerStartY: number;
+      markerEndX: number;
+      markerEndY: number;
+      startDirection: Direction;
+      endDirection: Direction;
+      score: number;
+    };
 
-      return {
-        path: `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`,
-        // Path endpoints (where line actually ends - at table edges)
-        pathStartX: fromX,
-        pathStartY: fromColumnY,
-        pathEndX: toX,
-        pathEndY: toColumnY,
-        // Marker positions (outside table edges, adjusted based on marker type)
-        markerStartX: fromX + getMarkerOffset('start'),
-        markerStartY: fromColumnY,
-        markerEndX: toX - getMarkerOffset('end'),
-        markerEndY: toColumnY,
-        // Direction for markers (needed to draw them correctly)
-        startDirection: 'right' as const, // Marker points to the right (away from table)
-        endDirection: 'left' as const, // Marker points to the left (away from table)
-      };
-    } else {
-      // If fromTable is to the right of toTable
-      fromX = fromLeft - TABLE_EDGE_GAP_LEFT;
-      toX = toRight + TABLE_EDGE_GAP_RIGHT;
-      // Create orthogonal path: starts at table edge, goes horizontal, vertical, horizontal, ends at table edge
-      const midX = fromX - HORIZONTAL_OFFSET;
+    const getSegmentsForCandidate = (
+      startX: number,
+      startY: number,
+      midX: number,
+      endX: number,
+      endY: number
+    ): Array<{ x1: number; y1: number; x2: number; y2: number }> => [
+      { x1: startX, y1: startY, x2: midX, y2: startY },
+      { x1: midX, y1: startY, x2: midX, y2: endY },
+      { x1: midX, y1: endY, x2: endX, y2: endY },
+    ];
 
+    const getObstacleRects = (): Array<{
+      left: number;
+      right: number;
+      top: number;
+      bottom: number;
+    }> => {
+      if (typeof document === 'undefined') return [];
+      const nodes = Array.from(
+        document.querySelectorAll('.table-node[data-table-id]')
+      ) as HTMLElement[];
+      return nodes
+        .filter(el => {
+          const id = el.getAttribute('data-table-id');
+          return id && id !== fromTable.getId() && id !== toTable.getId();
+        })
+        .map(el => ({
+          left: el.offsetLeft,
+          right: el.offsetLeft + (el.offsetWidth || FALLBACK_TABLE_WIDTH),
+          top: el.offsetTop,
+          bottom: el.offsetTop + (el.offsetHeight || FALLBACK_TABLE_HEIGHT),
+        }));
+    };
+
+    const obstacleRects = getObstacleRects();
+
+    const scoreCandidate = (
+      segments: Array<{ x1: number; y1: number; x2: number; y2: number }>
+    ): number => countPathIntersections(segments, obstacleRects);
+
+    const getAnchorX = (tableSide: 'from' | 'to', side: Direction): number => {
+      if (tableSide === 'from') {
+        return side === 'right' ? fromRight + TABLE_EDGE_GAP_RIGHT : fromLeft - TABLE_EDGE_GAP_LEFT;
+      }
+      return side === 'right' ? toRight + TABLE_EDGE_GAP_RIGHT : toLeft - TABLE_EDGE_GAP_LEFT;
+    };
+
+    const getMidX = (fromSide: Direction, toSide: Direction, startX: number): number => {
+      if (fromSide === toSide) {
+        return fromSide === 'left'
+          ? Math.min(fromLeft, toLeft) - HORIZONTAL_OFFSET
+          : Math.max(fromRight, toRight) + HORIZONTAL_OFFSET;
+      }
+      // Opposite-side routing: keep legacy short-bend behavior for stable UX.
+      return fromSide === 'right' ? startX + HORIZONTAL_OFFSET : startX - HORIZONTAL_OFFSET;
+    };
+
+    const buildCandidate = (
+      fromSide: Direction,
+      toSide: Direction,
+      routingPenalty: number
+    ): Candidate => {
+      const startX = getAnchorX('from', fromSide);
+      const endX = getAnchorX('to', toSide);
+      const midX = getMidX(fromSide, toSide, startX);
+      const segments = getSegmentsForCandidate(startX, fromColumnY, midX, endX, toColumnY);
+      // Enforce anchor direction validity:
+      // - start on right should first move to the right (midX > startX), and left vice versa
+      // - end on right should be approached from the right (midX > endX), and left vice versa
+      // If violated, strongly penalize so router flips to a valid side combo.
+      let directionPenalty = 0;
+      if (fromSide === 'right' && !(midX > startX)) directionPenalty += 1000;
+      if (fromSide === 'left' && !(midX < startX)) directionPenalty += 1000;
+      if (toSide === 'right' && !(midX > endX)) directionPenalty += 1000;
+      if (toSide === 'left' && !(midX < endX)) directionPenalty += 1000;
       return {
-        path: `M ${fromX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${toX} ${toColumnY}`,
-        // Path endpoints (where line actually ends - at table edges)
-        pathStartX: fromX,
+        path: `M ${startX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${endX} ${toColumnY}`,
+        pathStartX: startX,
         pathStartY: fromColumnY,
-        pathEndX: toX,
+        pathEndX: endX,
         pathEndY: toColumnY,
-        // Marker positions (outside table edges, adjusted based on marker type)
-        markerStartX: fromX - getMarkerOffset('start'),
+        markerStartX:
+          fromSide === 'right'
+            ? startX + getMarkerOffset('start')
+            : startX - getMarkerOffset('start'),
         markerStartY: fromColumnY,
-        markerEndX: toX + getMarkerOffset('end'),
+        markerEndX:
+          toSide === 'right' ? endX + getMarkerOffset('end') : endX - getMarkerOffset('end'),
         markerEndY: toColumnY,
-        // Direction for markers
-        startDirection: 'left' as const, // Marker points to the left (away from table)
-        endDirection: 'right' as const, // Marker points to the right (away from table)
+        startDirection: fromSide,
+        endDirection: toSide,
+        score: scoreCandidate(segments) + routingPenalty + directionPenalty,
       };
-    }
+    };
+
+    const defaultFromSide: Direction = fromCenterX < toCenterX ? 'right' : 'left';
+    const defaultToSide: Direction = defaultFromSide === 'right' ? 'left' : 'right';
+    const combos: Array<{ from: Direction; to: Direction; penalty: number }> = [
+      { from: defaultFromSide, to: defaultToSide, penalty: 0 }, // default opposite-side
+      {
+        from: defaultFromSide === 'right' ? 'left' : 'right',
+        to: defaultFromSide,
+        penalty: 0.1,
+      }, // alternate opposite-side
+      { from: 'left', to: 'left', penalty: 0.35 }, // same-side left-left fallback
+      { from: 'right', to: 'right', penalty: 0.35 }, // same-side right-right fallback
+    ];
+
+    const candidates = combos.map(c => buildCandidate(c.from, c.to, c.penalty));
+    candidates.sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      // tie-breaker: prefer shorter horizontal travel
+      const aDx = Math.abs(a.pathStartX - a.pathEndX);
+      const bDx = Math.abs(b.pathStartX - b.pathEndX);
+      return aDx - bDx;
+    });
+    return candidates[0];
   }, [
     fromX,
     fromY,
@@ -349,34 +434,6 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   );
 };
 
-// Memoize RelationshipLine to prevent unnecessary re-renders
-// But always re-render when table positions change
-export const RelationshipLine = memo(RelationshipLineComponent, (prevProps, nextProps) => {
-  // Always re-render if relationship ID or type changes
-  if (
-    prevProps.relationship.getId() !== nextProps.relationship.getId() ||
-    prevProps.relationship.getType() !== nextProps.relationship.getType()
-  ) {
-    return false; // Props changed, need to re-render
-  }
-
-  // Check if table positions changed
-  const prevFromPos = prevProps.fromTable.getPosition();
-  const nextFromPos = nextProps.fromTable.getPosition();
-  const prevToPos = prevProps.toTable.getPosition();
-  const nextToPos = nextProps.toTable.getPosition();
-
-  const positionsChanged =
-    prevFromPos.x !== nextFromPos.x ||
-    prevFromPos.y !== nextFromPos.y ||
-    prevToPos.x !== nextToPos.x ||
-    prevToPos.y !== nextToPos.y;
-
-  // If positions changed, need to re-render
-  if (positionsChanged) {
-    return false;
-  }
-
-  // Props are the same, skip re-render
-  return true;
-});
+// Do not memoize this component: table/relationship objects are mutable during drag,
+// so memo comparisons can miss live position changes and keep stale paths on screen.
+export const RelationshipLine = RelationshipLineComponent;
