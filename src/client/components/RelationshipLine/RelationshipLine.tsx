@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Relationship } from '../../core/relationship/Relationship';
 import { Table } from '../../core/table/Table';
 import { countPathIntersections } from '../../core/diagram/routingIntersections';
@@ -195,58 +195,83 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
       segments: Array<{ x1: number; y1: number; x2: number; y2: number }>
     ): number => countPathIntersections(segments, obstacleRects);
 
-    const buildCandidate = (forceDirection?: Direction): Candidate => {
-      const leftToRight =
-        forceDirection === 'right' || (forceDirection === undefined && fromCenterX < toCenterX);
-
-      if (leftToRight) {
-        const startX = fromRight + TABLE_EDGE_GAP_RIGHT;
-        const endX = toLeft - TABLE_EDGE_GAP_LEFT;
-        const midX = startX + HORIZONTAL_OFFSET;
-        const segments = getSegmentsForCandidate(startX, fromColumnY, midX, endX, toColumnY);
-        return {
-          path: `M ${startX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${endX} ${toColumnY}`,
-          pathStartX: startX,
-          pathStartY: fromColumnY,
-          pathEndX: endX,
-          pathEndY: toColumnY,
-          markerStartX: startX + getMarkerOffset('start'),
-          markerStartY: fromColumnY,
-          markerEndX: endX - getMarkerOffset('end'),
-          markerEndY: toColumnY,
-          startDirection: 'right',
-          endDirection: 'left',
-          score: scoreCandidate(segments),
-        };
+    const getAnchorX = (tableSide: 'from' | 'to', side: Direction): number => {
+      if (tableSide === 'from') {
+        return side === 'right' ? fromRight + TABLE_EDGE_GAP_RIGHT : fromLeft - TABLE_EDGE_GAP_LEFT;
       }
+      return side === 'right' ? toRight + TABLE_EDGE_GAP_RIGHT : toLeft - TABLE_EDGE_GAP_LEFT;
+    };
 
-      const startX = fromLeft - TABLE_EDGE_GAP_LEFT;
-      const endX = toRight + TABLE_EDGE_GAP_RIGHT;
-      const midX = startX - HORIZONTAL_OFFSET;
+    const getMidX = (fromSide: Direction, toSide: Direction, startX: number): number => {
+      if (fromSide === toSide) {
+        return fromSide === 'left'
+          ? Math.min(fromLeft, toLeft) - HORIZONTAL_OFFSET
+          : Math.max(fromRight, toRight) + HORIZONTAL_OFFSET;
+      }
+      // Opposite-side routing: keep legacy short-bend behavior for stable UX.
+      return fromSide === 'right' ? startX + HORIZONTAL_OFFSET : startX - HORIZONTAL_OFFSET;
+    };
+
+    const buildCandidate = (
+      fromSide: Direction,
+      toSide: Direction,
+      routingPenalty: number
+    ): Candidate => {
+      const startX = getAnchorX('from', fromSide);
+      const endX = getAnchorX('to', toSide);
+      const midX = getMidX(fromSide, toSide, startX);
       const segments = getSegmentsForCandidate(startX, fromColumnY, midX, endX, toColumnY);
+      // Enforce anchor direction validity:
+      // - start on right should first move to the right (midX > startX), and left vice versa
+      // - end on right should be approached from the right (midX > endX), and left vice versa
+      // If violated, strongly penalize so router flips to a valid side combo.
+      let directionPenalty = 0;
+      if (fromSide === 'right' && !(midX > startX)) directionPenalty += 1000;
+      if (fromSide === 'left' && !(midX < startX)) directionPenalty += 1000;
+      if (toSide === 'right' && !(midX > endX)) directionPenalty += 1000;
+      if (toSide === 'left' && !(midX < endX)) directionPenalty += 1000;
       return {
         path: `M ${startX} ${fromColumnY} L ${midX} ${fromColumnY} L ${midX} ${toColumnY} L ${endX} ${toColumnY}`,
         pathStartX: startX,
         pathStartY: fromColumnY,
         pathEndX: endX,
         pathEndY: toColumnY,
-        markerStartX: startX - getMarkerOffset('start'),
+        markerStartX:
+          fromSide === 'right'
+            ? startX + getMarkerOffset('start')
+            : startX - getMarkerOffset('start'),
         markerStartY: fromColumnY,
-        markerEndX: endX + getMarkerOffset('end'),
+        markerEndX:
+          toSide === 'right' ? endX + getMarkerOffset('end') : endX - getMarkerOffset('end'),
         markerEndY: toColumnY,
-        startDirection: 'left',
-        endDirection: 'right',
-        score: scoreCandidate(segments),
+        startDirection: fromSide,
+        endDirection: toSide,
+        score: scoreCandidate(segments) + routingPenalty + directionPenalty,
       };
     };
 
-    const defaultDirection: Direction = fromCenterX < toCenterX ? 'right' : 'left';
-    const oppositeDirection: Direction = defaultDirection === 'right' ? 'left' : 'right';
+    const defaultFromSide: Direction = fromCenterX < toCenterX ? 'right' : 'left';
+    const defaultToSide: Direction = defaultFromSide === 'right' ? 'left' : 'right';
+    const combos: Array<{ from: Direction; to: Direction; penalty: number }> = [
+      { from: defaultFromSide, to: defaultToSide, penalty: 0 }, // default opposite-side
+      {
+        from: defaultFromSide === 'right' ? 'left' : 'right',
+        to: defaultFromSide,
+        penalty: 0.1,
+      }, // alternate opposite-side
+      { from: 'left', to: 'left', penalty: 0.35 }, // same-side left-left fallback
+      { from: 'right', to: 'right', penalty: 0.35 }, // same-side right-right fallback
+    ];
 
-    const defaultCandidate = buildCandidate(defaultDirection);
-    const flippedCandidate = buildCandidate(oppositeDirection);
-
-    return defaultCandidate.score <= flippedCandidate.score ? defaultCandidate : flippedCandidate;
+    const candidates = combos.map(c => buildCandidate(c.from, c.to, c.penalty));
+    candidates.sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      // tie-breaker: prefer shorter horizontal travel
+      const aDx = Math.abs(a.pathStartX - a.pathEndX);
+      const bDx = Math.abs(b.pathStartX - b.pathEndX);
+      return aDx - bDx;
+    });
+    return candidates[0];
   }, [
     fromX,
     fromY,
@@ -409,34 +434,6 @@ const RelationshipLineComponent: React.FC<RelationshipLineProps> = ({
   );
 };
 
-// Memoize RelationshipLine to prevent unnecessary re-renders
-// But always re-render when table positions change
-export const RelationshipLine = memo(RelationshipLineComponent, (prevProps, nextProps) => {
-  // Always re-render if relationship ID or type changes
-  if (
-    prevProps.relationship.getId() !== nextProps.relationship.getId() ||
-    prevProps.relationship.getType() !== nextProps.relationship.getType()
-  ) {
-    return false; // Props changed, need to re-render
-  }
-
-  // Check if table positions changed
-  const prevFromPos = prevProps.fromTable.getPosition();
-  const nextFromPos = nextProps.fromTable.getPosition();
-  const prevToPos = prevProps.toTable.getPosition();
-  const nextToPos = nextProps.toTable.getPosition();
-
-  const positionsChanged =
-    prevFromPos.x !== nextFromPos.x ||
-    prevFromPos.y !== nextFromPos.y ||
-    prevToPos.x !== nextToPos.x ||
-    prevToPos.y !== nextToPos.y;
-
-  // If positions changed, need to re-render
-  if (positionsChanged) {
-    return false;
-  }
-
-  // Props are the same, skip re-render
-  return true;
-});
+// Do not memoize this component: table/relationship objects are mutable during drag,
+// so memo comparisons can miss live position changes and keep stale paths on screen.
+export const RelationshipLine = RelationshipLineComponent;
