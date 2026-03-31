@@ -11,6 +11,10 @@ import { UIStore } from '../state/store/uiStore';
 import { Diagram } from '../core/diagram/Diagram';
 import { Table } from '../core/table/Table';
 import { Relationship } from '../core/relationship/Relationship';
+import {
+  countPathIntersections,
+  segmentIntersectsRectInterior,
+} from '../core/diagram/routingIntersections';
 
 async function testDiagramCanvasIntegration(): Promise<void> {
   console.log('\n🧪 Testing DiagramCanvas Integration...');
@@ -260,11 +264,34 @@ async function testComponentIntegration(): Promise<void> {
   console.log('✅ Component integration working');
 }
 
+async function testRelationshipRoutingIntersectionHelpers(): Promise<void> {
+  console.log('\n🧪 Testing Relationship routing intersection helpers...');
+
+  const rect = { left: 100, right: 200, top: 100, bottom: 200 };
+  const crossingHorizontal = { x1: 50, y1: 150, x2: 250, y2: 150 };
+  const outsideHorizontal = { x1: 50, y1: 90, x2: 250, y2: 90 };
+
+  if (!segmentIntersectsRectInterior(crossingHorizontal, rect)) {
+    throw new Error('Expected horizontal segment to intersect rectangle interior');
+  }
+  if (segmentIntersectsRectInterior(outsideHorizontal, rect)) {
+    throw new Error('Unexpected intersection for segment outside rectangle');
+  }
+
+  const score = countPathIntersections([crossingHorizontal, outsideHorizontal], [rect]);
+  if (score !== 1) {
+    throw new Error(`Expected intersection score = 1, got ${score}`);
+  }
+
+  console.log('✅ Relationship routing intersection helpers working');
+}
+
 async function runTests(): Promise<void> {
   try {
     await testDiagramCanvasIntegration();
     await testTableNodeLogic();
     await testRelationshipLineLogic();
+    await testRelationshipRoutingIntersectionHelpers();
     await testCanvasZoomPan();
     await testComponentIntegration();
 
