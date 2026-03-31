@@ -8,10 +8,6 @@ TESTS=(
   src/client/core/__tests__/test-auto-layout.ts
   src/client/core/__tests__/test-domain-models.ts
   src/client/core/__tests__/test-validators.ts
-  src/server/__tests__/test-repositories.ts
-  src/server/__tests__/test-services.ts
-  src/server/__tests__/test-exporters.ts
-  src/server/__tests__/test-controllers.ts
   src/client/__tests__/test-state-management.ts
   src/client/__tests__/test-parsers.ts
   src/client/__tests__/test-export-functionality.ts

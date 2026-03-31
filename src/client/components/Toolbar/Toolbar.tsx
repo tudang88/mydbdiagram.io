@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { DiagramService } from '../../services/DiagramService';
 import { ExportService } from '../../services/ExportService';
 import { DiagramStore } from '../../state/store/diagramStore';
 import { Diagram } from '../../core/diagram/Diagram';
 import { applyAutoLayout } from '../../core/diagram/autoLayoutDiagram';
+import { FrontendExporter } from '../../core/exporter/FrontendExporter';
+import { JSONParser } from '../../core/parser/JSONParser';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
 import { ExportDialog } from '../ExportDialog/ExportDialog';
-import { LoadDialog } from '../LoadDialog/LoadDialog';
 import { KeyboardShortcutsHelp } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp';
+import { FilePickerAccept, pickTextFile, saveTextFile } from '../../utils/fileSystemAccess';
 import './Toolbar.css';
 
 interface ToolbarProps {
-  diagramService: DiagramService;
   exportService: ExportService;
   diagramStore: DiagramStore;
   onNewDiagram: () => void;
@@ -23,7 +23,6 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
-  diagramService,
   exportService,
   diagramStore,
   onNewDiagram,
@@ -34,8 +33,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const frontendExporter = new FrontendExporter();
+  const jsonParser = new JSONParser();
+  const fileAccept: FilePickerAccept[] = [
+    {
+      description: 'Diagram JSON',
+      mimeTypes: ['application/json', 'text/plain'],
+      extensions: ['.json'],
+    },
+  ];
 
   const handleNew = () => {
     const newDiagram = Diagram.create(`diagram-${Date.now()}`);
@@ -60,18 +67,54 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         diagram.setSourceText(editorText, editorFormat);
       }
 
-      const result = await diagramService.saveDiagram(diagram);
-      if (result.success && result.data) {
-        // Update diagram with saved data (including ID if it was a new diagram)
-        const savedDiagram = Diagram.fromJSON(result.data);
-        diagramStore.setDiagram(savedDiagram);
-        alert('Diagram saved successfully!');
-      } else {
-        const errorMessages = result.errors?.map(e => e.message).join(', ') || 'Unknown error';
-        alert(`Failed to save diagram: ${errorMessages}`);
+      const jsonResult = frontendExporter.exportJSON(diagram);
+      if (!jsonResult.success || !jsonResult.data) {
+        alert(jsonResult.error || 'Failed to prepare diagram JSON');
+        return;
       }
+
+      const suggestedName = `${diagram.getId() || 'diagram'}.json`;
+      await saveTextFile(jsonResult.data, {
+        suggestedName,
+        accept: fileAccept,
+      });
+      alert('Diagram saved to file successfully!');
     } catch (error) {
       alert(`Error saving diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleLoadFromFile = async () => {
+    try {
+      const { text } = await pickTextFile({ accept: fileAccept });
+      if (!text.trim()) {
+        alert('Selected file is empty');
+        return;
+      }
+
+      const result = jsonParser.parse(text);
+      if (!result.success || !result.data) {
+        const errorMsg = result.errors?.map(e => e.message).join('\n') || 'Invalid diagram JSON';
+        alert(`Failed to load diagram: ${errorMsg}`);
+        return;
+      }
+
+      diagramStore.setDiagram(result.data);
+      const sourceText = result.data.getSourceText();
+      let editorText = sourceText;
+      if (!editorText) {
+        const sqlResult = frontendExporter.exportSQL(result.data);
+        editorText = sqlResult.success ? sqlResult.data : undefined;
+      }
+      onDiagramLoaded('load');
+      if (editorText && onImportText) {
+        onImportText(editorText);
+      } else {
+        onImportText?.('');
+      }
+      alert('Diagram loaded from file successfully!');
+    } catch (error) {
+      alert(`Error loading diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -119,7 +162,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onClick={() => {
             setShowExportDialog(false);
             setShowImportDialog(false);
-            setShowLoadDialog(true);
+            void handleLoadFromFile();
           }}
           title="Load Diagram"
         >
@@ -166,19 +209,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         isOpen={showExportDialog}
         onClose={() => setShowExportDialog(false)}
         exportService={exportService}
-        diagramStore={diagramStore}
-      />
-      <LoadDialog
-        isOpen={showLoadDialog}
-        onClose={() => setShowLoadDialog(false)}
-        onLoad={diagramText => {
-          onDiagramLoaded('load');
-          // Set text in editor if provided
-          if (diagramText && onImportText) {
-            onImportText(diagramText);
-          }
-        }}
-        diagramService={diagramService}
         diagramStore={diagramStore}
       />
       {showShortcutsHelp && (

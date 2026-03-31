@@ -12,10 +12,8 @@ import { ColumnEditor } from './components/ColumnEditor/ColumnEditor';
 import { RelationshipCreator } from './components/RelationshipCreator/RelationshipCreator';
 import { DiagramStore } from './state/store/diagramStore';
 import { UIStore } from './state/store/uiStore';
-import { DiagramService } from './services/DiagramService';
 import { ExportService } from './services/ExportService';
 import { ApiClient } from './services/ApiClient';
-import { DiagramValidator } from './core/validator/DiagramValidator';
 import { Diagram } from './core/diagram/Diagram';
 import { mergeDiagramLayout } from './core/diagram/mergeDiagramLayout';
 import { applyAutoLayout } from './core/diagram/autoLayoutDiagram';
@@ -26,8 +24,6 @@ import './App.css';
 
 // Initialize services and stores
 const apiClient = new ApiClient();
-const validator = new DiagramValidator();
-const diagramService = new DiagramService(apiClient, validator);
 const exportService = new ExportService(apiClient);
 const diagramStore = new DiagramStore();
 const uiStore = new UIStore();
@@ -275,7 +271,6 @@ function App() {
     <ErrorBoundary>
       <div className="app">
         <Toolbar
-          diagramService={diagramService}
           exportService={exportService}
           diagramStore={diagramStore}
           onNewDiagram={handleNewDiagram}
