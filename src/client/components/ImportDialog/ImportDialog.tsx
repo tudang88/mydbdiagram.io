@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { JSONParser } from '../../core/parser/JSONParser';
 import { SQLParser } from '../../core/parser/SQLParser';
 import { Diagram } from '../../core/diagram/Diagram';
+import { FilePickerAccept, pickTextFile } from '../../utils/fileSystemAccess';
 import './ImportDialog.css';
 
 interface ImportDialogProps {
@@ -18,7 +19,13 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
   const [jsonText, setJsonText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileAccept: FilePickerAccept[] = [
+    {
+      description: 'Diagram files',
+      mimeTypes: ['application/json', 'text/plain'],
+      extensions: ['.json', '.sql'],
+    },
+  ];
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -38,17 +45,10 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
   // Return null after useEffect to ensure cleanup runs
   if (!isOpen) return null;
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleFileSelect = async () => {
     try {
+      const { file, text } = await pickTextFile({ accept: fileAccept });
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const text = await file.text();
 
       if (!text || !text.trim()) {
         setError('File is empty');
@@ -66,10 +66,6 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
       } else {
         setError('Unsupported file format. Please use .sql or .json files.');
         return;
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to read file');
@@ -280,14 +276,6 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
               <pre>{error}</pre>
             </div>
           )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".sql,.json"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
         </div>
 
         <div className="dialog-actions">
