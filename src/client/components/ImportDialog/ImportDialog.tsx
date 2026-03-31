@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { JSONParser } from '../../core/parser/JSONParser';
 import { SQLParser } from '../../core/parser/SQLParser';
 import { Diagram } from '../../core/diagram/Diagram';
-import { FilePickerAccept, pickTextFile } from '../../utils/fileSystemAccess';
+import {
+  FilePickerAccept,
+  isUserCancelledFilePickerError,
+  pickTextFile,
+} from '../../utils/fileSystemAccess';
 import './ImportDialog.css';
 
 interface ImportDialogProps {
@@ -68,6 +72,9 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose, onI
         return;
       }
     } catch (err) {
+      if (isUserCancelledFilePickerError(err)) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to read file');
     }
   };

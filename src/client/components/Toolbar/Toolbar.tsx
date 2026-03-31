@@ -8,7 +8,12 @@ import { JSONParser } from '../../core/parser/JSONParser';
 import { ImportDialog } from '../ImportDialog/ImportDialog';
 import { ExportDialog } from '../ExportDialog/ExportDialog';
 import { KeyboardShortcutsHelp } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp';
-import { FilePickerAccept, pickTextFile, saveTextFile } from '../../utils/fileSystemAccess';
+import {
+  FilePickerAccept,
+  isUserCancelledFilePickerError,
+  pickTextFile,
+  saveTextFile,
+} from '../../utils/fileSystemAccess';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -80,6 +85,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       });
       alert('Diagram saved to file successfully!');
     } catch (error) {
+      if (isUserCancelledFilePickerError(error)) {
+        return;
+      }
       alert(`Error saving diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -114,6 +122,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       }
       alert('Diagram loaded from file successfully!');
     } catch (error) {
+      if (isUserCancelledFilePickerError(error)) {
+        return;
+      }
       alert(`Error loading diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
