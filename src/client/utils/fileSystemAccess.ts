@@ -44,6 +44,20 @@ export interface FilePickerAccept {
   extensions: string[];
 }
 
+export class UserCancelledFilePickerError extends Error {
+  constructor() {
+    super('User cancelled file picker');
+    this.name = 'UserCancelledFilePickerError';
+  }
+}
+
+export function isUserCancelledFilePickerError(error: unknown): boolean {
+  if (error instanceof UserCancelledFilePickerError) return true;
+  if (error instanceof DOMException && error.name === 'AbortError') return true;
+  if (error instanceof Error && error.name === 'AbortError') return true;
+  return false;
+}
+
 export function supportsFileSystemAccessApi(): boolean {
   const w = window as WindowFilePickerSupport;
   return typeof w.showOpenFilePicker === 'function' && typeof w.showSaveFilePicker === 'function';
@@ -76,15 +90,32 @@ function readFromInputElement(accept?: FilePickerAccept[]): Promise<File> {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept?.flatMap(item => item.extensions).join(',') || '';
+    let handled = false;
     input.onchange = () => {
+      handled = true;
       const file = input.files?.[0];
       if (!file) {
-        reject(new Error('No file selected'));
+        reject(new UserCancelledFilePickerError());
         return;
       }
       resolve(file);
     };
     input.onerror = () => reject(new Error('Failed to open file picker'));
+    input.oncancel = () => {
+      handled = true;
+      reject(new UserCancelledFilePickerError());
+    };
+
+    const onFocusBack = () => {
+      setTimeout(() => {
+        if (!handled) {
+          handled = true;
+          reject(new UserCancelledFilePickerError());
+        }
+        window.removeEventListener('focus', onFocusBack, true);
+      }, 0);
+    };
+    window.addEventListener('focus', onFocusBack, true);
     input.click();
   });
 }
