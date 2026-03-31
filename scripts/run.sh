@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to run MyDBDiagram.io with automatic port cleanup
+# Script to run MyDBDiagram.io (frontend-only) with automatic port cleanup
 # Usage: ./run.sh
 
 # Colors for output
@@ -41,7 +41,6 @@ kill_port() {
 
 # Clean up ports
 echo -e "${BLUE}🔍 Checking and cleaning ports...${NC}"
-kill_port 3000  # Backend port
 kill_port 5173  # Frontend port (Vite default)
 kill_port 5174  # Vite fallback port
 kill_port 5175  # Vite fallback port
@@ -60,7 +59,6 @@ fi
 # Run the application
 echo -e "${GREEN}🎉 Starting application...${NC}"
 echo -e "${BLUE}   Frontend will be available at: http://localhost:5173${NC}"
-echo -e "${BLUE}   Backend API will be available at: http://localhost:3000${NC}"
 echo ""
 echo -e "${YELLOW}💡 Press Ctrl+C to stop the application${NC}"
 echo ""
