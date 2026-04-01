@@ -48,3 +48,6 @@ data/
 # yarn.lock
 # pnpm-lock.yaml
 
+
+# Cursor local settings
+.cursor/
