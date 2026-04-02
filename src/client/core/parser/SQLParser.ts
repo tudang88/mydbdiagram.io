@@ -362,29 +362,16 @@ export class SQLParser implements Parser<string, Diagram> {
           currentTableName = '';
         }
       }
-      // ALTER TABLE statements (for FOREIGN KEY constraints added after table creation)
-      else if (upperLine.startsWith('ALTER TABLE')) {
-        // Parse ALTER TABLE table_name ADD CONSTRAINT constraint_name FOREIGN KEY (column_name) REFERENCES table_name(column_name)
-        // Pattern: ALTER TABLE `table_name` ADD CONSTRAINT `constraint_name` FOREIGN KEY (`column_name`) REFERENCES `table_name` (`column_name`);
-        // Also support: ALTER TABLE `table_name` ADD FOREIGN KEY (`column_name`) REFERENCES `table_name` (`column_name`);
-        const alterTableMatch = line.match(
-          /ALTER\s+TABLE\s+[`"]?(\w+)[`"]?\s+ADD\s+(?:CONSTRAINT\s+[`"]?\w+[`"]?\s+)?FOREIGN\s+KEY\s*\([`"]?(\w+)[`"]?\)\s+REFERENCES\s+[`"]?(\w+)[`"]?\s*\([`"]?(\w+)[`"]?\)/i
-        );
-        if (alterTableMatch) {
-          const fromTableName = alterTableMatch[1];
-          const fromColumn = alterTableMatch[2];
-          const toTableName = alterTableMatch[3];
-          const toColumn = alterTableMatch[4];
-
-          pendingRelationships.push({ fromTableName, fromColumn, toTableName, toColumn });
-        }
-      }
     }
 
     // Save last table if exists
     if (currentTable && currentTable.name) {
       tables.push(this.finalizeTable(currentTable as Partial<TableData>));
     }
+
+    // Parse ALTER TABLE ... ADD [CONSTRAINT ...] FOREIGN KEY ... REFERENCES ...
+    // as a whole-SQL pass so multiline statements and schema-qualified identifiers are supported.
+    this.collectAlterTableForeignKeys(sql, pendingRelationships);
 
     this.resolveRelationships(tables, tableNameMap, pendingRelationships, relationships);
     this.applyCommentsToTables(tables, tableComments, columnComments);
@@ -437,7 +424,14 @@ export class SQLParser implements Parser<string, Diagram> {
       toColumn: string;
     }>
   ): void {
+    const seen = new Set<string>();
     pendingRelationships.forEach(rel => {
+      const key = `${rel.fromTableName.toLowerCase()}|${rel.fromColumn.toLowerCase()}|${rel.toTableName.toLowerCase()}|${rel.toColumn.toLowerCase()}`;
+      if (seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+
       const fromTableId = tableNameMap.get(rel.fromTableName.toLowerCase());
       const toTableId = tableNameMap.get(rel.toTableName.toLowerCase());
       if (!fromTableId || !toTableId) {
@@ -519,6 +513,41 @@ export class SQLParser implements Parser<string, Diagram> {
     }
     if (upperLine.includes('UNIQUE')) {
       this.applyTableConstraintToColumns(line, currentTable, 'UNIQUE');
+    }
+  }
+
+  private collectAlterTableForeignKeys(
+    sql: string,
+    pendingRelationships: Array<{
+      fromTableName: string;
+      fromColumn: string;
+      toTableName: string;
+      toColumn: string;
+    }>
+  ): void {
+    const ident = String.raw`(?:"[^"]+"|` + '`[^`]+`' + String.raw`|[A-Za-z_][\w$]*)`;
+    const qualifiedIdent = String.raw`(${ident}(?:\s*\.\s*${ident})?)`;
+    const columnIdent = String.raw`(${ident})`;
+    const normalize = (token: string): string =>
+      token
+        .split('.')
+        .map(part => part.trim().replace(/^[`"]|[`"]$/g, ''))
+        .filter(Boolean)
+        .at(-1) || '';
+
+    const alterFkRegex = new RegExp(
+      String.raw`ALTER\s+TABLE\s+${qualifiedIdent}\s+ADD\s+(?:CONSTRAINT\s+${ident}\s+)?FOREIGN\s+KEY\s*\(\s*${columnIdent}\s*\)\s+REFERENCES\s+${qualifiedIdent}\s*\(\s*${columnIdent}\s*\)`,
+      'gi'
+    );
+
+    let match: RegExpExecArray | null;
+    while ((match = alterFkRegex.exec(sql)) !== null) {
+      const fromTableName = normalize(match[1]);
+      const fromColumn = normalize(match[2]);
+      const toTableName = normalize(match[3]);
+      const toColumn = normalize(match[4]);
+      if (!fromTableName || !fromColumn || !toTableName || !toColumn) continue;
+      pendingRelationships.push({ fromTableName, fromColumn, toTableName, toColumn });
     }
   }
 
