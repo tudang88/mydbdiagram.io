@@ -2,6 +2,10 @@
 
 Personal tool similar to dbdiagram.io for database diagramming.
 
+## Demo Video
+
+- YouTube: [MyDBDiagram.io Demo](https://youtu.be/Xkr_5TXwc_s)
+
 ## Features
 
 - **Visual Database Diagramming**: Create and edit database diagrams with tables, columns, and relationships
