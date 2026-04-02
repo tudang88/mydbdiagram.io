@@ -257,6 +257,56 @@ async function testSQLParser(): Promise<void> {
     throw new Error('SQLParser failed to parse COMMENT ON COLUMN');
   }
   console.log('✅ COMMENT ON TABLE/COLUMN parsing working');
+
+  // Test ALTER TABLE foreign keys (multiline + quoted + schema-qualified)
+  const alterTableSql = `
+    CREATE TABLE users (
+      id BIGINT PRIMARY KEY
+    );
+
+    CREATE TABLE orders (
+      id BIGINT PRIMARY KEY,
+      user_id BIGINT NOT NULL
+    );
+
+    CREATE TABLE order_items (
+      id BIGINT PRIMARY KEY,
+      order_id BIGINT NOT NULL
+    );
+
+    ALTER TABLE orders
+      ADD CONSTRAINT fk_orders_user
+      FOREIGN KEY (user_id)
+      REFERENCES users(id);
+
+    ALTER TABLE "order_items"
+      ADD FOREIGN KEY ("order_id")
+      REFERENCES "orders"("id");
+
+    ALTER TABLE public.orders
+      ADD CONSTRAINT "fk_orders_user_2"
+      FOREIGN KEY ("user_id")
+      REFERENCES public.users("id");
+  `;
+  const alterTableResult = parser.parse(alterTableSql);
+  if (!alterTableResult.success || !alterTableResult.data) {
+    throw new Error('SQLParser failed to parse ALTER TABLE foreign keys');
+  }
+  const alterDiagram = alterTableResult.data;
+  const alterRels = alterDiagram.getAllRelationships();
+  if (alterRels.length < 2) {
+    throw new Error(
+      `SQLParser should create relationships from ALTER TABLE foreign keys, got ${alterRels.length}`
+    );
+  }
+  const orders = alterDiagram.getAllTables().find(t => t.getName() === 'orders');
+  const userIdColumn = orders?.getAllColumns().find(c => c.name === 'user_id');
+  if (!userIdColumn || !userIdColumn.constraints.some(c => c.type === 'FOREIGN_KEY')) {
+    throw new Error(
+      'SQLParser failed to add FOREIGN_KEY constraint from ALTER TABLE to source column'
+    );
+  }
+  console.log('✅ ALTER TABLE FOREIGN KEY parsing working');
 }
 
 async function testDBMLParser(): Promise<void> {
